@@ -1,0 +1,1248 @@
+/* =========================================
+   1. DESIGN TOKENS AND RESET
+========================================= */
+
+:root {
+  --color-ink: #20252b;
+  --color-indigo: #1c2a3a;
+  --color-indigo-light: #293d52;
+  --color-paper: #f5f0e7;
+  --color-paper-dark: #e8dfd1;
+  --color-white: #fffdf8;
+  --color-muted: #686963;
+  --color-red: #b74430;
+  --color-line: #d8cfc1;
+
+  --font-display: "Judson", Georgia, serif;
+  --font-body: "IBM Plex Sans", Arial, sans-serif;
+  --font-condensed: "IBM Plex Sans Condensed", sans-serif;
+
+  --page-width: 1320px;
+  --page-padding: clamp(1.25rem, 5vw, 5rem);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: var(--color-red);
+  color: var(--color-white);
+}
+
+/* =========================================
+   2. ACCESSIBILITY
+========================================= */
+
+.skip-link {
+  position: absolute;
+  z-index: 1000;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.75rem 1rem;
+  transform: translateY(-150%);
+  background: var(--color-white);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+a:focus-visible {
+  outline: 3px solid var(--color-red);
+  outline-offset: 5px;
+}
+
+/* =========================================
+   3. HEADER AND NAVIGATION
+========================================= */
+
+.site-header {
+  position: relative;
+  z-index: 10;
+  background: var(--color-indigo);
+  color: var(--color-white);
+}
+
+.header-inner {
+  width: min(100%, var(--page-width));
+  min-height: 82px;
+  margin-inline: auto;
+  padding-inline: var(--page-padding);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.site-wordmark,
+.footer-wordmark {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  letter-spacing: -0.08em;
+}
+
+.site-wordmark span,
+.footer-wordmark span {
+  color: var(--color-red);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.75rem);
+}
+
+.site-nav a {
+  position: relative;
+  padding-block: 0.5rem;
+  color: rgba(255, 253, 248, 0.8);
+  font-family: var(--font-condensed);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.site-nav a::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--color-red);
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+}
+
+.site-nav a:hover,
+.site-nav a:focus-visible {
+  color: var(--color-white);
+}
+
+.site-nav a:hover::after,
+.site-nav a:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* =========================================
+   4. HERO SECTION
+========================================= */
+
+.hero-section {
+  overflow: hidden;
+  padding: clamp(3rem, 7vw, 7rem) var(--page-padding) 0;
+  background: var(--color-indigo);
+  color: var(--color-white);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+  align-items: center;
+  gap: clamp(2.5rem, 7vw, 7rem);
+
+  width: min(100%, var(--page-width));
+  margin-inline: auto;
+}
+
+.hero-text-col {
+  padding-block: 1rem 3rem;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.75rem;
+
+  font-family: var(--font-condensed);
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.eyebrow-mark {
+  display: inline-block;
+  width: 28px;
+  height: 2px;
+  background: var(--color-red);
+}
+
+.hero-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(4.5rem, 10vw, 9.5rem);
+  font-weight: 400;
+  letter-spacing: -0.075em;
+  line-height: 0.82;
+}
+
+.hero-headline em {
+  color: #e8d9c3;
+  font-weight: 400;
+}
+
+.hero-tagline {
+  max-width: 440px;
+  margin: 2.25rem 0 0;
+
+  color: #e9c3a9;
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.4vw, 2rem);
+  font-style: italic;
+  line-height: 1.3;
+}
+
+.hero-intro {
+  max-width: 440px;
+  margin: 1.25rem 0 0;
+  color: rgba(255, 253, 248, 0.76);
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+
+  margin-top: 2rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 253, 248, 0.45);
+
+  color: var(--color-white);
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: gap 180ms ease, border-color 180ms ease;
+}
+
+.text-link:hover {
+  gap: 1.15rem;
+  border-color: var(--color-red);
+}
+
+.text-link span {
+  color: #e9c3a9;
+  font-size: 1.2rem;
+}
+
+/* Hero portrait area */
+
+.hero-image-col {
+  align-self: stretch;
+  display: flex;
+  align-items: flex-end;
+}
+
+.hero-figure {
+  width: 100%;
+  margin: 0;
+}
+
+.portrait-placeholder {
+  position: relative;
+  min-height: 460px;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.75rem;
+
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background:
+    linear-gradient(145deg, transparent 35%, rgba(0, 0, 0, 0.25)),
+    var(--color-indigo-light);
+
+  border: 1px solid rgba(255, 253, 248, 0.18);
+}
+
+.portrait-placeholder::before {
+  position: absolute;
+  top: 12%;
+  right: -15%;
+  width: 85%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 253, 248, 0.14);
+  border-radius: 50%;
+  content: "";
+}
+
+.portrait-placeholder::after {
+  position: absolute;
+  top: 20%;
+  right: -3%;
+  width: 65%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 253, 248, 0.1);
+  border-radius: 50%;
+  content: "";
+}
+
+.placeholder-number {
+  color: #e9c3a9;
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+}
+
+.placeholder-title {
+  max-width: 300px;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.placeholder-note {
+  max-width: 300px;
+  color: rgba(255, 253, 248, 0.68);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.hero-figure figcaption {
+  padding-top: 0.75rem;
+  color: rgba(255, 253, 248, 0.6);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+/* Hero bottom information line */
+
+.hero-bottomline {
+  width: min(100%, var(--page-width));
+  margin: 4rem auto 0;
+  padding-block: 1.2rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  border-top: 1px solid rgba(255, 253, 248, 0.2);
+  color: rgba(255, 253, 248, 0.68);
+
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+/* =========================================
+   5. SHARED SECTION LAYOUT
+========================================= */
+
+.section-shell {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(0, 2fr);
+  gap: clamp(2rem, 7vw, 7rem);
+
+  padding: clamp(4rem, 8vw, 8rem) var(--page-padding);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.section-kicker {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+
+  color: var(--color-muted);
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.section-kicker span:first-child {
+  color: var(--color-red);
+  font-weight: 600;
+}
+
+.section-content {
+  width: 100%;
+  max-width: 900px;
+  min-width: 0;
+}
+
+.section-content h2,
+.quote-inner h2 {
+  margin: 0 0 2rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 5rem);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 1.05;
+}
+
+.section-subtitle {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.source-note {
+  margin: 2rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-line);
+
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+/* =========================================
+   6. BIOGRAPHY
+========================================= */
+
+.bio-section {
+  background: var(--color-paper);
+}
+
+.bio-body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem 2rem;
+}
+
+.bio-body p {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.95;
+}
+
+.bio-body em {
+  font-family: var(--font-display);
+  font-size: 1.05em;
+}
+
+/* =========================================
+   7. SELECTED WORKS
+========================================= */
+
+.works-section {
+  background: var(--color-white);
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.section-heading-row h2 {
+  margin-bottom: 0;
+}
+
+.section-heading-row .section-subtitle {
+  max-width: 220px;
+  padding-bottom: 0.5rem;
+}
+
+.works-index {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-line);
+}
+
+.work-item {
+  display: grid;
+  grid-template-columns: 65px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 1.5rem;
+
+  padding: 1.7rem 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.work-year {
+  padding-top: 0.35rem;
+  color: var(--color-red);
+  font-family: var(--font-condensed);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.work-main h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.work-main p {
+  max-width: 560px;
+  margin: 0.5rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.86rem;
+  line-height: 1.8;
+}
+
+.work-genre {
+  margin-top: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+
+  color: var(--color-muted);
+  font-family: var(--font-condensed);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* =========================================
+   8. TIMELINE
+========================================= */
+
+.timeline-section {
+  background: var(--color-paper);
+}
+
+.timeline-intro {
+  margin-top: -1rem;
+  margin-bottom: 2.5rem;
+}
+
+.timeline-list {
+  position: relative;
+  display: grid;
+  gap: 0;
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline-list::before {
+  position: absolute;
+  top: 0.75rem;
+  bottom: 1.5rem;
+  left: 55px;
+  width: 1px;
+  background: var(--color-line);
+  content: "";
+}
+
+.milestone-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 1.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.milestone-item:last-child {
+  padding-bottom: 0;
+}
+
+.milestone-item time {
+  position: relative;
+  z-index: 1;
+
+  padding-top: 0.15rem;
+  background: var(--color-paper);
+  color: var(--color-red);
+
+  font-family: var(--font-condensed);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.milestone-item h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.milestone-item p {
+  margin: 0.45rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  line-height: 1.8;
+}
+
+/* =========================================
+   9. QUOTATION SECTION
+========================================= */
+
+.quote-section {
+  padding: clamp(5rem, 10vw, 10rem) var(--page-padding);
+  background: var(--color-indigo);
+  color: var(--color-white);
+}
+
+.quote-inner {
+  width: min(100%, 1000px);
+  margin-inline: auto;
+}
+
+.quote-eyebrow {
+  color: #e9c3a9;
+}
+
+.quote-inner h2 {
+  max-width: 800px;
+}
+
+.editorial-quote {
+  margin: 3rem 0 0;
+  padding: 2rem 0 2rem clamp(1.5rem, 4vw, 3rem);
+  border-left: 3px solid var(--color-red);
+}
+
+.editorial-quote p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 3.5rem);
+  line-height: 1.25;
+}
+
+.editorial-quote footer {
+  margin-top: 1.5rem;
+  color: rgba(255, 253, 248, 0.65);
+  font-size: 0.82rem;
+  line-height: 1.8;
+}
+
+.quote-source-link {
+  margin-top: 2rem;
+  color: rgba(255, 253, 248, 0.72);
+  font-size: 0.85rem;
+}
+
+.quote-source-link a {
+  color: #e9c3a9;
+  text-underline-offset: 4px;
+}
+
+/* =========================================
+   10. CLOSING SECTION
+========================================= */
+
+.closing-section {
+  background: var(--color-paper-dark);
+}
+
+.closing-content h2 {
+  max-width: 800px;
+}
+
+.closing-content p {
+  max-width: 700px;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+/* =========================================
+   11. FOOTER
+========================================= */
+
+.site-footer {
+  padding: 4rem var(--page-padding) 0;
+  background: var(--color-indigo);
+  color: var(--color-white);
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+
+  width: min(100%, var(--page-width));
+  margin-inline: auto;
+  padding-bottom: 3rem;
+}
+
+.footer-wordmark {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
+.footer-brand p {
+  max-width: 350px;
+  margin: 0.5rem 0;
+  color: rgba(255, 253, 248, 0.68);
+  font-size: 0.82rem;
+  line-height: 1.8;
+}
+
+.footer-sources h2 {
+  margin: 0 0 1.25rem;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 400;
+}
+
+.footer-sources ul {
+  display: grid;
+  gap: 0.75rem;
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer-sources a {
+  color: rgba(255, 253, 248, 0.82);
+  font-size: 0.84rem;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(255, 253, 248, 0.3);
+}
+
+.footer-sources a:hover {
+  color: #e9c3a9;
+}
+
+.image-credit {
+  margin-top: 1.5rem;
+  color: rgba(255, 253, 248, 0.55);
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  width: min(100%, var(--page-width));
+  margin-inline: auto;
+  padding-block: 1.25rem;
+
+  border-top: 1px solid rgba(255, 253, 248, 0.2);
+  color: rgba(255, 253, 248, 0.6);
+
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+}
+
+.footer-bottom a {
+  color: var(--color-white);
+  text-decoration: none;
+}
+
+/* =========================================
+   12. RESPONSIVE DESIGN: TABLETS
+========================================= */
+
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 0.8fr);
+    gap: 2.5rem;
+  }
+
+  .hero-headline {
+    font-size: clamp(4.2rem, 10vw, 7rem);
+  }
+
+  .portrait-placeholder {
+    min-height: 380px;
+  }
+
+  .section-shell {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .section-kicker {
+    margin-bottom: 0;
+  }
+
+  .section-content {
+    max-width: none;
+  }
+
+  .bio-body {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* =========================================
+   13. RESPONSIVE DESIGN: MOBILE
+========================================= */
+
+@media (max-width: 620px) {
+  :root {
+    --page-padding: 1.25rem;
+  }
+
+  html {
+    scroll-padding-top: 20px;
+  }
+
+  .header-inner {
+    min-height: auto;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding-block: 1.25rem;
+  }
+
+  .site-nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .site-nav a {
+    font-size: 0.78rem;
+  }
+
+  .hero-section {
+    padding-top: 3rem;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .hero-text-col {
+    padding-bottom: 0;
+  }
+
+  .hero-headline {
+    font-size: clamp(4.5rem, 18vw, 7rem);
+  }
+
+  .hero-tagline {
+    margin-top: 1.75rem;
+  }
+
+  .hero-image-col {
+    align-items: stretch;
+  }
+
+  .portrait-placeholder {
+    min-height: 340px;
+    aspect-ratio: 4 / 3;
+  }
+
+  .hero-bottomline {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 2.5rem;
+  }
+
+  .section-shell {
+    padding-block: 4rem;
+  }
+
+  .section-content h2,
+  .quote-inner h2 {
+    font-size: clamp(2.5rem, 11vw, 3.8rem);
+  }
+
+  .bio-body {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .section-heading-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .section-heading-row .section-subtitle {
+    max-width: none;
+  }
+
+  .work-item {
+    grid-template-columns: 45px minmax(0, 1fr);
+    gap: 0.9rem;
+    padding-block: 1.4rem;
+  }
+
+  .work-genre {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: -0.2rem;
+  }
+
+  .timeline-list::before {
+    left: 43px;
+  }
+
+  .milestone-item {
+    grid-template-columns: 55px minmax(0, 1fr);
+    gap: 1rem;
+    padding-bottom: 2rem;
+  }
+
+  .milestone-item h3 {
+    font-size: 1.35rem;
+  }
+
+  .quote-section {
+    padding-block: 5rem;
+  }
+
+  .editorial-quote {
+    margin-top: 2rem;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .footer-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* =========================================
+   14. REDUCED MOTION ACCESSIBILITY
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+
+/* =========================================
+   3D ROTATING PORTRAIT CAROUSEL (circular)
+   Replaces the old "3D EDITORIAL PORTRAIT COLLAGE" block.
+   Pure CSS: no JavaScript needed.
+
+   .portrait-stage     -> perspective (the camera)
+   .portrait-carousel  -> spins on the Y axis (the turntable)
+   .portrait-orbit     -> the orbit track, lying flat and spinning with the carousel
+   .portrait-slot      -> places one card on the circle (angle + radius)
+   .portrait-face      -> turns the card back toward the viewer as it orbits
+   .portrait-photo     -> the circular image (hover scale, depth shading)
+========================================= */
+
+.hero-image-col {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem 4rem;
+  overflow: visible;
+}
+
+/* ---------- Camera ---------- */
+
+.portrait-stage {
+  --orbit-duration: 22s;                       /* one full turn */
+  --radius: clamp(150px, 17.5vw, 245px);       /* distance of the cards from the centre */
+  --card-w: 50%;                               /* circle diameter */
+  --tilt: 14deg;                               /* camera looks down on the orbit */
+  --shift: -4vw;                               /* nudges the orbit left so it never clips */
+
+  position: relative;
+  width: min(100%, 540px);
+  aspect-ratio: 0.9;
+  perspective: 1200px;
+  translate: var(--shift) 0;
+}
+
+/* Receives the mouse-parallax tilt from motion.js */
+.portrait-tilt {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+/* ---------- Turntable ---------- */
+
+.portrait-carousel {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: portrait-orbit var(--orbit-duration) linear infinite;
+}
+
+@keyframes portrait-orbit {
+  from { transform: rotateX(var(--tilt)) rotateY(0deg); }
+  to   { transform: rotateX(var(--tilt)) rotateY(360deg); }
+}
+
+/* ---------- Orbit track: a flat ring with a bright head and a fading tail ---------- */
+
+.portrait-orbit {
+  position: absolute;
+  top: 78%;
+  left: 50%;
+  width: calc(var(--radius) * 2);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotateX(90deg);
+  pointer-events: none;
+}
+
+.portrait-orbit::before {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  content: "";
+
+  background: conic-gradient(
+    from 0deg,
+    rgba(232, 217, 195, 0.9),
+    rgba(232, 217, 195, 0.08) 60%,
+    rgba(232, 217, 195, 0.9)
+  );
+
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 2px),
+    #000 calc(100% - 1.5px)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 2px),
+    #000 calc(100% - 1.5px)
+  );
+}
+
+/* A small "planet" travelling along the track */
+
+.portrait-orbit::after {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e8d9c3;
+  box-shadow: 0 0 14px 4px rgba(232, 217, 195, 0.55);
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+/* ---------- Card positions on the circle ---------- */
+
+.portrait-slot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--card-w);
+  aspect-ratio: 1;
+  transform-style: preserve-3d;
+  transform:
+    translate(-50%, -50%)
+    rotateY(var(--angle))
+    translateZ(var(--radius));
+}
+
+/* --phase = (angle + 180) / 360, keeps each card's animations in sync */
+.portrait-slot--main  { --angle: 0deg;    --phase: 0.5;    }
+.portrait-slot--right { --angle: 120deg;  --phase: 0.8333; }
+.portrait-slot--left  { --angle: -120deg; --phase: 0.1667; }
+
+/* Turns each card back toward the viewer while the ring spins,
+   keeping a gentle outward angle on the left and right cards. */
+
+.portrait-face {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  animation: portrait-face var(--orbit-duration) linear infinite;
+  animation-delay: calc(var(--orbit-duration) * var(--phase) * -1);
+}
+
+@keyframes portrait-face {
+  0%       { transform: rotateY(180deg);  }
+  8.333%   { transform: rotateY(131deg);  }
+  16.667%  { transform: rotateY(87deg);   }
+  25%      { transform: rotateY(52deg);   }
+  33.333%  { transform: rotateY(27deg);   }
+  41.667%  { transform: rotateY(11deg);   }
+  50%      { transform: rotateY(0deg);    }
+  58.333%  { transform: rotateY(-11deg);  }
+  66.667%  { transform: rotateY(-27deg);  }
+  75%      { transform: rotateY(-52deg);  }
+  83.333%  { transform: rotateY(-87deg);  }
+  91.667%  { transform: rotateY(-131deg); }
+  100%     { transform: rotateY(-180deg); }
+}
+
+/* ---------- Circular image ---------- */
+
+.portrait-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  box-shadow:
+    0 28px 55px rgba(0, 0, 0, 0.45),
+    0 0 0 8px rgba(232, 217, 195, 0.06);
+
+  /* keeps the circles upright against the camera tilt */
+  rotate: 1 0 0 calc(var(--tilt) * -1);
+
+  animation: portrait-depth var(--orbit-duration) linear infinite;
+  animation-delay: calc(var(--orbit-duration) * var(--phase) * -1);
+
+  transition:
+    transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 400ms ease;
+}
+
+/* Cards further back are dimmer, the front card is at full brightness */
+
+@keyframes portrait-depth {
+  0%       { filter: brightness(0.5);  }
+  8.333%   { filter: brightness(0.54); }
+  16.667%  { filter: brightness(0.63); }
+  25%      { filter: brightness(0.76); }
+  33.333%  { filter: brightness(0.88); }
+  41.667%  { filter: brightness(0.97); }
+  50%      { filter: brightness(1);    }
+  58.333%  { filter: brightness(0.97); }
+  66.667%  { filter: brightness(0.88); }
+  75%      { filter: brightness(0.76); }
+  83.333%  { filter: brightness(0.63); }
+  91.667%  { filter: brightness(0.54); }
+  100%     { filter: brightness(0.5);  }
+}
+
+/* ---------- Hover: pause the orbit, lift and enlarge the hovered circle ---------- */
+
+.portrait-stage:hover .portrait-carousel,
+.portrait-stage:hover .portrait-face,
+.portrait-stage:hover .portrait-photo {
+  animation-play-state: paused;
+}
+
+.portrait-photo:hover {
+  transform: translateZ(60px) scale(1.1);
+  box-shadow:
+    0 38px 70px rgba(0, 0, 0, 0.55),
+    0 0 0 8px rgba(232, 217, 195, 0.14);
+  filter: brightness(1) !important; /* !important beats the running animation */
+}
+
+/* ---------- Caption label ---------- */
+
+.portrait-label {
+  position: absolute;
+  z-index: 4;
+  bottom: 2%;
+  left: 7%;
+  padding: 0.8rem 1rem;
+  background: #b74430;
+  color: #fffdf8;
+  font-family: var(--font-condensed);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+}
+
+.portrait-label span {
+  color: rgba(255, 253, 248, 0.75);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+  .portrait-stage {
+    --radius: 140px;
+    --card-w: 46%;
+    --shift: 0px;
+    width: min(100%, 440px);
+  }
+}
+
+@media (max-width: 620px) {
+  .hero-image-col {
+    padding: 1rem 0 2rem;
+  }
+
+  .portrait-stage {
+    --radius: 105px;
+    --card-w: 44%;
+    --shift: 0px;
+    width: min(100%, 360px);
+  }
+}
+
+/* ---------- Reduced motion: static, still 3D, no spinning ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .portrait-carousel,
+  .portrait-face,
+  .portrait-photo {
+    animation: none;
+  }
+
+  .portrait-carousel {
+    transform: rotateX(var(--tilt));
+  }
+
+  .portrait-slot--right .portrait-face { transform: rotateY(-87deg); }
+  .portrait-slot--left  .portrait-face { transform: rotateY(87deg);  }
+
+  .portrait-slot--right .portrait-photo,
+  .portrait-slot--left  .portrait-photo {
+    filter: brightness(0.7);
+  }
+}

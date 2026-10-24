@@ -1,0 +1,120 @@
+
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* expo-out feel for CSS transitions */
+}
+
+/* ---------- Lenis smooth scroll (recommended base styles) ---------- */
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+
+
+.motion-pending .hero-headline .word {
+  visibility: hidden;
+}
+
+.motion-pending .hero-text-col .eyebrow,
+.motion-pending .hero-tagline,
+.motion-pending .hero-intro,
+.motion-pending .text-link,
+.motion-pending .portrait-stage {
+  opacity: 0;
+}
+
+/* ---------- Text mask (heading reveal) ---------- */
+
+.word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+
+  /* Padding gives descenders and italic overhang room; the negative
+     margin cancels it so the layout does not change. */
+  padding: 0.1em 0.08em 0.2em;
+  margin: -0.1em -0.08em -0.2em;
+}
+
+.word {
+  display: inline-block;
+  will-change: transform;
+}
+
+.hero-headline .word-mask {
+  padding: 0.15em 0.15em 0.25em;
+  margin: -0.15em -0.15em -0.25em;
+}
+
+/* ---------- Section 02: work rows hover ---------- */
+
+.work-item {
+  transition:
+    background-color 600ms var(--ease-out),
+    padding 600ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .work-item:hover {
+    padding-inline: 1.5rem 1rem;
+    background-color: var(--color-paper);
+  }
+}
+
+/* ---------- Section 03: timeline line and dots ---------- */
+
+.timeline-list::before {
+  transform-origin: top;
+  transform: scaleY(var(--line, 1));
+}
+
+.milestone-item::before {
+  position: absolute;
+  z-index: 2;
+  top: 0.7rem;
+  left: 51px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-red);
+  content: "";
+  transform: scale(var(--dot, 1));
+}
+
+@media (max-width: 620px) {
+  .milestone-item::before {
+    left: 39px;
+  }
+}
+
+/* ---------- Section 04: quote accent line ---------- */
+
+.editorial-quote {
+  position: relative;
+  border-left: 0;
+}
+
+.editorial-quote::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--color-red);
+  content: "";
+  transform-origin: top;
+  transform: scaleY(var(--bar, 1));
+}
