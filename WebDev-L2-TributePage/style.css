@@ -1951,3 +1951,80 @@ html.lenis body {
     will-change: auto;
   }
 }
+/* =========================================
+   MOBILE 3D TIMELINE STACK (Desktop Match)
+========================================= */
+@media (max-width: 768px) {
+  
+  /* 1. Force no horizontal scroll from the giant year */
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+
+  .timeline-list {
+    padding: 0 0 15vh 0 !important; /* Space at bottom */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+
+  /* 2. The Stacking Cards */
+  .milestone-item {
+    position: sticky !important;
+    top: 10vh !important; /* Sticks below the mobile header */
+    height: 60vh !important; /* Fits perfectly on phone */
+    margin-bottom: 2vh !important;
+    
+    /* Solid background to hide the card behind it */
+    background: var(--color-paper) !important; 
+    border-top: 3px solid var(--color-red) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.08) !important;
+    
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important; /* Center content vertically */
+    padding: 2rem 1.5rem !important;
+    overflow: hidden !important;
+  }
+
+  /* 3. The Giant Watermark Year */
+  .milestone-item time {
+    position: absolute !important;
+    top: 50% !important;
+    left: -2rem !important; /* Pushed slightly left to bleed off edge */
+    transform: translateY(-50%) !important;
+    
+    font-family: var(--font-display) !important;
+    font-size: 18rem !important; /* Still massive, but fits mobile */
+    font-weight: 400 !important;
+    line-height: 0.7 !important;
+    color: var(--color-indigo) !important;
+    opacity: 0.04 !important; /* Same faint watermark */
+    z-index: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* 4. The Text Content */
+  .milestone-item div {
+    position: relative !important;
+    z-index: 10 !important;
+    margin-left: 0 !important; /* Remove desktop 15vw offset */
+    max-width: 100% !important;
+    margin-top: 2rem !important; /* Push down slightly from top border */
+  }
+
+  .milestone-item h3 {
+    font-size: 2.2rem !important;
+    margin-bottom: 1rem !important;
+    line-height: 1.1 !important;
+    color: var(--color-indigo) !important;
+  }
+
+  .milestone-item p {
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+    color: var(--color-muted) !important;
+  }
+}

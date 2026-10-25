@@ -1,4 +1,3 @@
-
 /*
   MOTION LAYER: GSAP + ScrollTrigger + Lenis
   Wole Soyinka Tribute Website
@@ -30,9 +29,6 @@
 
   /*
     1. Safe fallback
-
-    If motion is disabled or a required GSAP dependency is missing,
-    make sure the page does not remain hidden by motion-pending.
   */
 
   const restorePageVisibility = () => {
@@ -76,7 +72,6 @@
   const ScrollTrigger = window.ScrollTrigger;
   const TextPlugin = window.TextPlugin;
 
-  // Register only the plugins that are available.
   const availablePlugins = [ScrollTrigger];
 
   if (TextPlugin) {
@@ -151,14 +146,12 @@
         "+=0.1"
       );
     } else {
-      // Avoid a long loading screen on mobile and other pages.
       preloader.style.display = "none";
     }
   }
 
   /*
     3. Lenis smooth scrolling
-    Desktop only. Native mobile scrolling remains in control.
   */
 
   let lenis = null;
@@ -310,7 +303,6 @@
 
   /*
     5. 3D portrait interaction
-    Fine-pointer desktop devices only.
   */
 
   const heroSection = document.querySelector(".hero-section");
@@ -342,7 +334,6 @@
 
   /*
     6. Portrait orbit speed
-    Avoid extra scroll-linked animation work on mobile.
   */
 
   if (stage && !isMobile) {
@@ -381,8 +372,6 @@
 
   /*
     7. Typewriter headings
-    Use the text plugin only when it is loaded.
-    Preserve the original heading markup if it is unavailable.
   */
 
   const typewriterHeadings = document.querySelectorAll(
@@ -392,8 +381,6 @@
   if (TextPlugin && typewriterHeadings.length > 0) {
     typewriterHeadings.forEach((heading) => {
       const originalHTML = heading.innerHTML;
-
-      // Keep the original content available to assistive technology.
       const originalText = heading.textContent || "";
 
       heading.setAttribute("aria-label", originalText);
@@ -423,7 +410,6 @@
 
   /*
     8. Cinematic curtain reveals
-    Keep the effect on desktop; use a simple reveal on mobile.
   */
 
   const reveals = document.querySelectorAll(
@@ -577,9 +563,8 @@
   /*
     14. Responsive timeline
 
-    Desktop: retain the 3D stack effect.
-    Mobile: animate text only. Never shrink or fade
-    the milestone cards as the next one enters.
+    FIXED: Removed the !isMobile check so the 3D stack
+    works on both desktop and mobile.
   */
 
   const timelineList = document.querySelector(".timeline-list");
@@ -602,7 +587,8 @@
         }
       });
 
-      if (!isMobile && i < milestones.length - 1) {
+      // THIS NOW RUNS ON MOBILE TOO
+      if (i < milestones.length - 1) {
         gsap.to(item, {
           scale: 0.9,
           autoAlpha: 0,
@@ -622,9 +608,6 @@
 
   /*
     15. Quote animation
-
-    Keep parallax on desktop. On mobile, animate only
-    the accent line to avoid unnecessary movement.
   */
 
   const quote = document.querySelector(".editorial-quote");
@@ -711,7 +694,7 @@
   }
 
   /*
-    18. Refresh scroll measurements after page assets load.
+    18. Refresh scroll measurements
   */
 
   window.addEventListener("load", () => {
