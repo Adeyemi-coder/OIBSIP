@@ -962,18 +962,6 @@ a:focus-visible {
 }
 
 
-/* =========================================
-   3D ROTATING PORTRAIT CAROUSEL (circular)
-   Replaces the old "3D EDITORIAL PORTRAIT COLLAGE" block.
-   Pure CSS: no JavaScript needed.
-
-   .portrait-stage     -> perspective (the camera)
-   .portrait-carousel  -> spins on the Y axis (the turntable)
-   .portrait-orbit     -> the orbit track, lying flat and spinning with the carousel
-   .portrait-slot      -> places one card on the circle (angle + radius)
-   .portrait-face      -> turns the card back toward the viewer as it orbits
-   .portrait-photo     -> the circular image (hover scale, depth shading)
-========================================= */
 
 .hero-image-col {
   min-width: 0;
@@ -1245,4 +1233,796 @@ a:focus-visible {
   .portrait-slot--left  .portrait-photo {
     filter: brightness(0.7);
   }
+}
+
+/* =========================================
+   MULTI-PAGE ARCHITECTURE UPDATES
+========================================= */
+
+/* Subpage Top Padding (so content doesn't hit the header) */
+.subpage-main {
+  padding-top: clamp(4rem, 10vw, 8rem);
+}
+
+/* 3-Column Footer */
+.footer-inner {
+  grid-template-columns: 2fr 1fr 1fr;
+}
+
+.footer-links h2,
+.footer-socials h2 {
+  margin: 0 0 1.25rem;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 400;
+}
+
+.footer-links ul,
+.footer-socials ul {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer-links a,
+.footer-socials a {
+  color: rgba(255, 253, 248, 0.82);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover,
+.footer-socials a:hover {
+  color: var(--color-red);
+}
+
+@media (max-width: 900px) {
+  .footer-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+}
+
+/* =========================================
+   FLOATING SIDE NAVIGATOR WIDGET
+========================================= */
+.side-nav-widget {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.side-nav-toggle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-indigo);
+  color: var(--color-white);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.side-nav-toggle:hover {
+  transform: scale(1.05);
+  background: var(--color-red);
+}
+
+.side-nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--color-indigo);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom right;
+}
+
+.side-nav-widget.is-open .side-nav-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.side-nav-menu a {
+  color: var(--color-white);
+  text-decoration: none;
+  font-family: var(--font-condensed);
+  font-size: 0.95rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.side-nav-menu a:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e9c3a9;
+}
+
+/* =========================================
+   STACKED TIMELINE (Mentor Feedback)
+========================================= */
+.timeline-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Space between cards */
+  margin: 0;
+  padding: 0 0 5rem 0;
+  list-style: none;
+}
+
+/* Hide the continuous vertical line */
+.timeline-list::before {
+  display: none; 
+}
+
+.milestone-item {
+  position: sticky;
+  top: 120px; /* Adjust based on header height */
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+  padding: 2.5rem;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+/* Offset each card so they stack visually */
+.milestone-item:nth-child(1) { top: 100px; z-index: 1; }
+.milestone-item:nth-child(2) { top: 110px; z-index: 2; }
+.milestone-item:nth-child(3) { top: 120px; z-index: 3; }
+.milestone-item:nth-child(4) { top: 130px; z-index: 4; }
+.milestone-item:nth-child(5) { top: 140px; z-index: 5; }
+.milestone-item:nth-child(6) { top: 150px; z-index: 6; }
+.milestone-item:nth-child(7) { top: 160px; z-index: 7; }
+.milestone-item:nth-child(8) { top: 170px; z-index: 8; }
+.milestone-item:nth-child(9) { top: 180px; z-index: 9; }
+.milestone-item:nth-child(10) { top: 190px; z-index: 10; }
+.milestone-item:nth-child(11) { top: 200px; z-index: 11; }
+
+/* Remove the old dot */
+.milestone-item::before {
+  display: none;
+}
+/* =========================================
+   CINEMATIC DEPTH STACK TIMELINE (FIXED)
+========================================= */
+.timeline-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0 0 20vh 0;
+  list-style: none;
+}
+
+.milestone-item {
+  position: sticky;
+  top: 15vh; /* Distance from top */
+  height: 65vh; /* Large panel */
+  
+  /* SOLID BACKGROUND IS CRITICAL to hide the card behind it */
+  background: var(--color-paper); 
+  border: none;
+  border-top: 1px solid var(--color-line);
+  box-shadow: 0 -20px 40px rgba(0, 0, 0, 0.03); /* Soft shadow goes UP */
+  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 10vw;
+  margin-bottom: 2vh;
+  
+  will-change: transform, opacity;
+}
+
+/* Assign z-index so newer cards are ALWAYS on top */
+.milestone-item:nth-child(1) { z-index: 1; }
+.milestone-item:nth-child(2) { z-index: 2; }
+.milestone-item:nth-child(3) { z-index: 3; }
+.milestone-item:nth-child(4) { z-index: 4; }
+.milestone-item:nth-child(5) { z-index: 5; }
+.milestone-item:nth-child(6) { z-index: 6; }
+.milestone-item:nth-child(7) { z-index: 7; }
+.milestone-item:nth-child(8) { z-index: 8; }
+.milestone-item:nth-child(9) { z-index: 9; }
+.milestone-item:nth-child(10) { z-index: 10; }
+.milestone-item:nth-child(11) { z-index: 11; }
+
+/* Massive background year - Toned down so it doesn't bleed */
+.milestone-item time {
+  position: absolute;
+  top: 50%;
+  left: 5vw;
+  transform: translateY(-50%);
+  
+  font-family: var(--font-display);
+  font-size: clamp(10rem, 25vw, 30rem); 
+  font-weight: 400;
+  line-height: 0.7;
+  color: var(--color-indigo);
+  opacity: 0.05; /* Faint watermark */
+  z-index: 0;
+  pointer-events: none;
+}
+
+.milestone-item div {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin-left: 15vw; 
+}
+
+.milestone-item h3 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 4vw, 4rem);
+  line-height: 1.1;
+  color: var(--color-indigo);
+  margin-bottom: 1rem;
+}
+
+.milestone-item p {
+  font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+  color: var(--color-muted);
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+/* Mobile Fallback */
+@media (max-width: 768px) {
+  .milestone-item {
+    height: auto;
+    padding: 3rem 1.5rem;
+    top: 10vh;
+  }
+  .milestone-item time {
+    font-size: 8rem;
+    top: 2rem;
+    left: 1rem;
+  }
+  .milestone-item div {
+    margin-left: 0;
+    margin-top: 6rem;
+  }
+  .milestone-item h3 { font-size: 2rem; }
+}
+/* =========================================
+   3D DEPTH STACK TIMELINE (FLAWLESS)
+========================================= */
+.timeline-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0 0 20vh 0; /* Space at bottom for scrolling past the last card */
+  list-style: none;
+}
+
+.milestone-item {
+  position: sticky;
+  top: 15vh; /* The card sticks 15% from the top of the screen */
+  height: 70vh; /* Each card takes up 70% of the viewport height */
+  
+  /* SOLID BACKGROUND IS THE SECRET TO NO BLEEDING */
+  background: var(--color-paper); 
+  border-top: 2px solid var(--color-red);
+  box-shadow: 0 -20px 40px rgba(0, 0, 0, 0.05); /* Shadow pushes UP to create depth */
+  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 10vw;
+  margin-bottom: 2vh;
+  
+  will-change: transform, opacity;
+  overflow: hidden;
+}
+
+/* Ensure newer cards always sit on top of older cards */
+.milestone-item:nth-child(1) { z-index: 1; }
+.milestone-item:nth-child(2) { z-index: 2; }
+.milestone-item:nth-child(3) { z-index: 3; }
+.milestone-item:nth-child(4) { z-index: 4; }
+.milestone-item:nth-child(5) { z-index: 5; }
+.milestone-item:nth-child(6) { z-index: 6; }
+.milestone-item:nth-child(7) { z-index: 7; }
+.milestone-item:nth-child(8) { z-index: 8; }
+.milestone-item:nth-child(9) { z-index: 9; }
+.milestone-item:nth-child(10) { z-index: 10; }
+.milestone-item:nth-child(11) { z-index: 11; }
+
+/* Massive watermark year in the background of the card */
+.milestone-item time {
+  position: absolute;
+  top: 50%;
+  left: 5vw;
+  transform: translateY(-50%);
+  
+  font-family: var(--font-display);
+  font-size: clamp(12rem, 25vw, 35rem); 
+  font-weight: 400;
+  line-height: 0.7;
+  color: var(--color-indigo);
+  opacity: 0.04; /* Extremely faint */
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* The content */
+.milestone-item div {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin-left: 15vw; /* Push text to the right to balance the giant year */
+}
+
+.milestone-item h3 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1.1;
+  color: var(--color-indigo);
+  margin-bottom: 1.5rem;
+}
+
+.milestone-item p {
+  font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+  color: var(--color-muted);
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+/* Mobile Fallback */
+@media (max-width: 768px) {
+  .milestone-item {
+    height: auto;
+    padding: 3rem 1.5rem;
+    top: 10vh;
+  }
+  .milestone-item time {
+    font-size: 8rem;
+    top: 2rem;
+    left: 1rem;
+  }
+  .milestone-item div {
+    margin-left: 0;
+    margin-top: 6rem;
+  }
+  .milestone-item h3 { font-size: 2rem; }
+}
+
+/* =========================================
+   3. HEADER AND NAVIGATION (PREMIUM)
+========================================= */
+
+.site-header {
+  position: fixed; /* Sticks to top */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  
+  /* Glassmorphism Effect */
+  background: rgba(28, 42, 58, 0.85); /* var(--color-indigo) with opacity */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 253, 248, 0.05);
+  
+  /* Smooth transition for when we add the JS scroll effect */
+  transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+/* When scrolled, we make it a bit darker/solid */
+.site-header.is-scrolled {
+  background: rgba(28, 42, 58, 0.98);
+  border-bottom: 1px solid rgba(255, 253, 248, 0.1);
+}
+
+.header-inner {
+  width: min(100%, var(--page-width));
+  min-height: 90px; /* Slightly taller for a premium feel */
+  margin-inline: auto;
+  padding-inline: var(--page-padding);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+/* The Logo */
+.site-wordmark {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  letter-spacing: -0.08em;
+  color: var(--color-white);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.site-wordmark:hover {
+  transform: scale(1.05); /* Subtle premium pop */
+}
+
+.site-wordmark span {
+  color: var(--color-red);
+}
+
+/* The Nav Links */
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 3.5rem); /* Wider spacing */
+}
+
+.nav-link {
+  position: relative;
+  padding-block: 0.5rem;
+  color: rgba(255, 253, 248, 0.6);
+  
+  font-family: var(--font-condensed);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.12em; /* Tracked out uppercase */
+  text-transform: uppercase;
+  text-decoration: none;
+  
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.nav-link {
+  position: relative;
+  padding-block: 0.5rem;
+  color: rgba(255, 253, 248, 0.65); /* Slightly dimmed by default */
+  
+  /* USE THE DISPLAY FONT TO MATCH THE HEADINGS */
+  font-family: var(--font-display); 
+  font-size: 1.15rem; 
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  text-transform: none; /* Remove uppercase */
+  text-decoration: none;
+  
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+/* The Hover Effect */
+.nav-link:hover {
+  color: var(--color-white);
+  transform: translateY(-2px); /* Subtle lift */
+}
+
+/* The Active State (using your terracotta red) */
+.nav-link[aria-current="page"] {
+  color: var(--color-white);
+}
+
+.nav-link[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  bottom: 0px; /* Adjust based on padding */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-red);
+  box-shadow: 0 0 10px var(--color-red); /* Glow effect */
+}
+
+/* Mobile adjustments */
+@media (max-width: 620px) {
+  .header-inner {
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+    padding-block: 1rem;
+  }
+  .site-nav {
+    gap: 1.5rem;
+  }
+  .nav-link {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* =========================================
+   CUSTOM CURSOR & MAGNETIC EFFECTS
+========================================= */
+@media (hover: hover) and (pointer: fine) {
+  body { cursor: none; } /* Hide default cursor */
+  a, button { cursor: none; }
+
+  .custom-cursor {
+    position: fixed;
+    top: 0; left: 0;
+    width: 8px; height: 8px;
+    background: var(--color-red);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease, background 0.3s ease;
+    background: var(--color-white); /* Change base color */
+  mix-blend-mode: difference; /* This is the magic property */
+
+  }
+
+  .custom-cursor-follower {
+    position: fixed;
+    top: 0; left: 0;
+    width: 40px; height: 40px;
+    border: 1px solid rgba(183, 68, 48, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+     mix-blend-mode: difference; 
+  border-color: var(--color-white);
+  }
+
+  /* Cursor Hover States */
+  .custom-cursor-follower.is-hovering {
+    width: 80px; height: 80px;
+    background: rgba(28, 42, 58, 0.8);
+    border-color: var(--color-white);
+    backdrop-filter: blur(4px);
+  }
+
+  .custom-cursor-follower.is-hovering .cursor-text {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .cursor-text {
+    font-family: var(--font-condensed);
+    color: var(--color-white);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.3s ease;
+  }
+
+  /* Magnetic Buttons */
+  .magnetic { display: inline-block; }
+}
+/* Cinematic Scroll Reveal */
+.reveal-curtain {
+  clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+  will-change: clip-path;
+}
+/* =========================================
+   3D CAROUSEL ENHANCEMENTS
+========================================= */
+/* Restore the original 3D variables */
+.portrait-stage {
+  --orbit-duration: 22s;
+  --radius: clamp(150px, 17.5vw, 245px);
+  --card-w: 50%;
+  --tilt: 14deg;
+  position: relative;
+  width: min(100%, 540px);
+  aspect-ratio: 0.9;
+  perspective: 1200px;
+}
+
+/* Add a realistic floor shadow under the carousel */
+.portrait-stage::after {
+  content: "";
+  position: absolute;
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%) rotateX(75deg);
+  width: calc(var(--radius) * 2.5);
+  height: 60px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Ensure photos are clickable for the custom cursor */
+.portrait-photo {
+  cursor: none;
+}
+.scrambled-char {
+  color: var(--color-red);
+  opacity: 0.6;
+}
+
+/* Disable old CSS animation */
+.marquee-track-js {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+/* Keep the group styling from before */
+.marquee-group {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2.5rem;
+  padding-right: 2.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 6.5vw, 6rem);
+  font-style: italic;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+/* =========================================
+   PAGE TRANSITION CURTAIN
+========================================= */
+.page-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.transition-curtain {
+  position: absolute;
+  inset: 0;
+  background: var(--color-indigo);
+  transform: scaleY(0);
+  transform-origin: bottom;
+}
+/* =========================================
+   FLOATING HOVER IMAGE
+========================================= */
+.floating-hover-img {
+  position: fixed;
+  top: 0; left: 0;
+  width: 250px;
+  aspect-ratio: 4/5;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0;
+  transform: scale(0.8);
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.floating-hover-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(100%);
+}
+/* =========================================
+   SCROLL PROGRESS BAR
+========================================= */
+.scroll-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--color-red);
+  transform-origin: left;
+  transform: scaleX(0);
+  z-index: 10000;
+  pointer-events: none;
+}
+/* =========================================
+   CINEMATIC PRELOADER
+========================================= */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: var(--color-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.preloader-content {
+  text-align: center;
+  color: var(--color-white);
+}
+
+.preloader-title {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 10vw, 8rem);
+  margin: 0;
+  letter-spacing: -0.05em;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.preloader-title span { color: var(--color-red); }
+
+.preloader-counter {
+  font-family: var(--font-condensed);
+  font-size: 1.2rem;
+  color: var(--color-red);
+  margin-top: 1rem;
+  opacity: 0;
+}/* =========================================
+   CINEMATIC PRELOADER
+========================================= */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: var(--color-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.preloader-content {
+  text-align: center;
+  color: var(--color-white);
+}
+
+.preloader-title {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 10vw, 8rem);
+  margin: 0;
+  letter-spacing: -0.05em;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.preloader-title span { color: var(--color-red); }
+
+.preloader-counter {
+  font-family: var(--font-condensed);
+  font-size: 1.2rem;
+  color: var(--color-red);
+  margin-top: 1rem;
+  opacity: 0;
+}
+
+/* Premium Animated Link Underline */
+.text-link, .footer-links a, .footer-socials a {
+  position: relative;
+  text-decoration: none;
+}
+
+.text-link::after, .footer-links a::after, .footer-socials a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: -4px;
+  left: 0;
+  background-color: var(--color-red);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* Premium easing */
+}
+
+.text-link:hover::after, .footer-links a:hover::after, .footer-socials a:hover::after {
+  width: 100%;
 }

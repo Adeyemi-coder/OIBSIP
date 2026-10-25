@@ -1,50 +1,54 @@
 # Wole Soyinka — A Literary Portrait
 
-A premium, interactive tribute page dedicated to the Nobel Laureate, Wole Soyinka. This project was built as part of the Oasis Infobyte Web Development & Designing Internship (Level 2, Task 2).
+A premium, interactive editorial tribute dedicated to the Nobel Laureate, Wole Soyinka. This project was built as part of the **Oasis Infobyte Web Development & Designing Internship (Level 2, Task 2)**.
 
-The goal of this project was to move beyond a standard static tribute page and create a bespoke, editorial experience using modern web animation techniques, 3D CSS transforms, and buttery-smooth scrolling.
+The goal of this project was to transcend a standard static tribute page and engineer a bespoke, digital publication experience. It combines high-end editorial typography with cutting-edge frontend animation techniques, 3D spatial interactions, and buttery-smooth scrolling.
 
+## 🔗 Live Demo
+[Insert your Vercel or Netlify link here]
 
- Key Features
+## ✨ Key Features
 
-Pure CSS 3D Orbit Carousel: A continuously rotating 3D carousel of portraits built entirely with CSS `transform-style: preserve-3d`, `rotateY`, and keyframe animations. No JavaScript required for the continuous motion.
+*   **Cinematic Preloader & Page Transitions:** A custom GSAP-powered preloader counts down on initial load. Navigating between pages triggers a seamless "curtain" transition, eliminating the harsh white flash of standard HTML page reloads.
+*   **Custom Interactive Cursor:** A bespoke mouse cursor with a smooth follower that expands and adapts (e.g., displaying "View" over images or "Click" over buttons) using GSAP `quickTo`. Includes magnetic hover effects on navigation links and buttons.
+*   **3D Spatial Carousel:** A continuously rotating 3D carousel of portraits built with CSS `transform-style: preserve-3d`. It features a dynamic tilt effect that responds smoothly to the user's mouse position via GSAP.
+*   **Buttery Smooth Scrolling:** Integrated **Lenis** to hijack native scrolling, providing a premium, momentum-based scrolling physics model that perfectly syncs with GSAP ScrollTrigger.
+*   **High-End Typography & Motion:** 
+    *   Headings reveal via a rapid, cinematic "typewriter" effect using GSAP `TextPlugin`.
+    *   Individual letters on navigation and text links physically "lift" on hover.
+    *   Subtle text-mask reveals, parallax background images, and staggered fade-ups across all sections.
+*   **Interactive Works Filter:** A custom vanilla JavaScript filtering system that allows users to sort Wole Soyinka's bibliography by genre (Plays, Novels, Poetry, etc.) with animated transitions.
+*   **Floating Side Navigator & Progress Bar:** A custom floating action button (FAB) opens a mobile-friendly side navigation menu. A subtle terracotta reading progress bar tracks scroll depth across the page.
+*   **Accessibility First:** Fully responsive mobile layout (with custom mobile header scaling), semantic HTML5, ARIA attributes, and strict support for `prefers-reduced-motion` to ensure users who are sensitive to motion can still enjoy the site comfortably.
 
-Buttery Smooth Scrolling: Integrated Lenis to hijack native scrolling and provide a premium, momentum-based scrolling experience.
+## 🛠️ Tech Stack
 
-Scroll-Driven Animations Leveraged GSAP (GreenSock) & ScrollTrigger for:
-    *   Text-mask reveals (words sliding up from behind invisible walls).
-    *   SVG/Line drawing on the timeline section as you scroll.
-    *   Parallax effects on the full-bleed photo band and the final quote.
-*Interactive Works Filter: A custom vanilla JavaScript filter system that allows users to sort Wole Soyinka's bibliography by genre (Plays, Novels, Poetry, etc.) with animated transitions.
-* Mouse Parallax Tilt: The 3D carousel tilts smoothly in response to the user's mouse movement using GSAP `quickTo`.
-*   Accessibility First: Fully responsive design with support for `prefers-reduced-motion` to ensure users who are sensitive to motion can still enjoy the site comfortably.
+*   **HTML5:** Semantic markup, ARIA attributes, and accessibility best practices.
+*   **CSS3:** Custom properties (variables), CSS Grid, Flexbox, 3D Transforms, Clip-path animations, and advanced fluid typography (`clamp`).
+*   **JavaScript (Vanilla):** DOM manipulation, active page routing logic, and custom filter functionality.
+*   **GSAP (GreenSock):** Core animation engine, `ScrollTrigger` for scroll-based interactions, `TextPlugin` for the typewriter effect, and `quickTo` for cursor/parallax tracking.
+*   **Lenis:** Smooth scroll library for premium momentum physics.
+*   **Google Fonts:** Judson (Serif display) and IBM Plex Sans (Body).
 
- 🛠️ Tech Stack
-
-*   HTML5: Semantic markup, ARIA attributes, and accessibility best practices.
-*   CSS3: Custom properties (variables), CSS Grid, Flexbox, 3D Transforms, Clip-path, and advanced typography.
-*  JavaScript (Vanilla):
- DOM manipulation and filtering logic.
-GSAP (GreenSock): Core animation engine and ScrollTrigger for scroll-based interactions.
-Lenis: Smooth scroll library.
-Google Fonts:Judson (Serif display) and IBM Plex Sans (Body).
-
-📁 Folder Structure
+## 📁 Folder Structure
 
 ```text
 WebDev-L2-TributePage/
 │
-├── index.html            # Main HTML document
-├── style.css             # Core styling, typography, and layout
-├── portrait-carousel.css # 3D CSS carousel styling
-├── motion.css            # Animation-specific CSS
+├── index.html            # Homepage (Overview & Hero)
+├── biography.html        # Full Biography page
+├── works.html            # Full Works index with JS filtering
+├── timeline.html         # Full interactive Timeline page
+│
+├── style.css             # Core styling, typography, layout, and responsive fixes
+├── motion.css            # Animation-specific CSS (masks, cursors, transitions)
 ├── polish.css            # Design refinements and overrides
 │
-├── script.js             # Navigation and general scripts
-├── motion.js             # GSAP and Lenis animation logic
+├── script.js             # Navigation logic, custom cursor, page transitions
+├── motion.js             # GSAP, ScrollTrigger, Lenis, and TextPlugin logic
 ├── features.js           # Works filter logic
 │
-├── assets/               # Images and media files
+├── assets/               # High-resolution images and media
 │   ├── wole soyinka.jpg
 │   ├── wole-soyinka 2.jpg
 │   └── wole-soyinka 3.jpg

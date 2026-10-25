@@ -1,36 +1,75 @@
 /*
    MOTION LAYER: GSAP + ScrollTrigger + Lenis
-  */
+   Fully assembled with Fast Typewriter Headings.
+*/
 
 (() => {
   "use strict";
 
   const root = document.documentElement;
-  const prefersReducedMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  ).matches;
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
- 
   if (prefersReducedMotion || !window.gsap || !window.ScrollTrigger) {
     root.classList.remove("motion-pending");
     return;
   }
 
-  gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollTrigger, TextPlugin);
   gsap.defaults({ ease: "power3.out", duration: 1 });
 
   const START = "top 80%";
+  // --- CINEMATIC PRELOADER ---
+    /* -----------------------------------------
+     1. Cinematic Preloader (Homepage Only)
+  ----------------------------------------- */
+  const preloader = document.querySelector(".preloader");
+  const preloaderTitle = document.querySelector(".preloader-title");
+  const preloaderCounter = document.querySelector(".preloader-counter");
 
+  if (preloader) {
+    // Check if we are on the homepage (index.html) or a subpage
+    const isHomePage = window.location.pathname.endsWith('index.html') || 
+                       window.location.pathname === '/' || 
+                       window.location.pathname.endsWith('/');
+
+    if (isHomePage) {
+      // RUN THE FULL ANIMATION on the homepage
+      const counter = { value: 0 };
+      const tl = gsap.timeline();
+      
+      tl.to(preloaderTitle, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" })
+        .to(preloaderCounter, { opacity: 1, duration: 0.5 }, "-=0.4")
+        .to(counter, {
+          value: 100,
+          duration: 1.5,
+          ease: "power2.inOut",
+          onUpdate: () => {
+            preloaderCounter.textContent = Math.round(counter.value) + "%";
+          }
+        })
+        .to(preloader, {
+          yPercent: -100,
+          duration: 1.2,
+          ease: "expo.inOut",
+          delay: 0.2,
+          onComplete: () => {
+            preloader.style.display = "none";
+          }
+        }, "+=0.2");
+    } else {
+      // SKIP THE ANIMATION on subpages
+      preloader.style.display = "none";
+    }
+  }
   /* -----------------------------------------
      1. Global: Lenis smooth scrolling
   ----------------------------------------- */
-
   let lenis = null;
 
   if (window.Lenis) {
     lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // expo-out
+      duration: 0.8,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true
     });
 
@@ -38,80 +77,72 @@
     gsap.ticker.add((time) => lenis.raf(time * 1000));
     gsap.ticker.lagSmoothing(0);
 
-    // In-page links use Lenis so they glide instead of jumping
     document.querySelectorAll('a[href^="#"]').forEach((link) => {
       if (link.classList.contains("skip-link")) return;
-
       link.addEventListener("click", (event) => {
         const id = link.getAttribute("href");
         const target = id.length > 1 ? document.querySelector(id) : null;
         if (!target) return;
-
         event.preventDefault();
-        lenis.scrollTo(target, { duration: 1.4 });
+        lenis.scrollTo(target, { duration: 1.2 });
       });
     });
   }
 
-
   function splitWords(element) {
+    if (!element) return [];
     const text = element.textContent.trim().replace(/\s+/g, " ");
     const words = text.split(" ");
-
     element.setAttribute("aria-label", text);
     element.textContent = "";
-
     words.forEach((word, index) => {
       const mask = document.createElement("span");
       mask.className = "word-mask";
       mask.setAttribute("aria-hidden", "true");
-
       const inner = document.createElement("span");
       inner.className = "word";
       inner.textContent = word;
-
       mask.appendChild(inner);
       element.appendChild(mask);
-
       if (index < words.length - 1) {
         element.appendChild(document.createTextNode(" "));
       }
     });
-
     return element.querySelectorAll(".word");
   }
 
   /* -----------------------------------------
-     2. Hero
+     2. Hero (3D Carousel & Text Reveal)
   ----------------------------------------- */
-
   const heroWords = gsap.utils.toArray(".hero-headline .word");
   const heroEyebrow = document.querySelector(".hero-text-col .eyebrow");
   const heroFades = gsap.utils.toArray(".hero-tagline, .hero-intro, .text-link");
   const stage = document.querySelector(".portrait-stage");
   const tilt = document.querySelector(".portrait-tilt");
 
-  // Set the start state in JS first, then hand over from the CSS fail-safe
-  gsap.set(heroWords, { yPercent: 115, autoAlpha: 1 });
-  gsap.set([heroEyebrow, ...heroFades], { autoAlpha: 0, y: 28 });
-  if (stage) gsap.set(stage, { autoAlpha: 0 });
-  if (tilt) gsap.set(tilt, { scale: 0.86 });
-  root.classList.remove("motion-pending");
+  if (heroWords.length > 0) {
+    gsap.set(heroWords, { yPercent: 115, autoAlpha: 1 });
+    if (heroEyebrow) gsap.set(heroEyebrow, { autoAlpha: 0, y: 28 });
+    gsap.set(heroFades, { autoAlpha: 0, y: 28 });
+    if (stage) gsap.set(stage, { autoAlpha: 0 });
+    if (tilt) gsap.set(tilt, { scale: 0.86 });
+    
+    root.classList.remove("motion-pending");
 
-  const intro = gsap.timeline({ defaults: { ease: "expo.out" } });
-
-  intro
-    .to(heroEyebrow, { autoAlpha: 1, y: 0, duration: 1 }, 0)
-    .to(heroWords, { yPercent: 0, duration: 1.2, stagger: 0.14 }, 0.1)
-    .to(heroFades, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.12 }, 0.5);
-
-  if (stage && tilt) {
-    intro
-      .to(stage, { autoAlpha: 1, duration: 1.2 }, 0.3)
-      .to(tilt, { scale: 1, duration: 1.4 }, 0.3);
+    const intro = gsap.timeline({ defaults: { ease: "expo.out" } });
+    if (heroEyebrow) intro.to(heroEyebrow, { autoAlpha: 1, y: 0, duration: 1 }, 0);
+    intro.to(heroWords, { yPercent: 0, duration: 1.2, stagger: 0.14 }, 0.1);
+    if (heroFades.length) intro.to(heroFades, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.12 }, 0.5);
+    if (stage && tilt) {
+      intro.to(stage, { autoAlpha: 1, duration: 1.2 }, 0.3).to(tilt, { scale: 1, duration: 1.4 }, 0.3);
+    }
+  } else {
+    root.classList.remove("motion-pending");
   }
 
-
+  /* -----------------------------------------
+     3. 3D Carousel Interaction
+  ----------------------------------------- */
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
   const heroSection = document.querySelector(".hero-section");
 
@@ -122,7 +153,6 @@
     heroSection.addEventListener("pointermove", (event) => {
       const x = event.clientX / window.innerWidth - 0.5;
       const y = event.clientY / window.innerHeight - 0.5;
-
       rotateY(x * 18);
       rotateX(-y * 12);
     });
@@ -133,10 +163,8 @@
     });
   }
 
-  // Scroll velocity: the carousel orbits faster the faster you scroll
   if (stage) {
     const rate = { value: 1 };
-
     const setOrbitSpeed = (target) => {
       gsap.to(rate, {
         value: target,
@@ -162,20 +190,90 @@
     ScrollTrigger.addEventListener("scrollEnd", () => setOrbitSpeed(1));
   }
 
+  /* -----------------------------------------
+     4. High-End Fast Typewriter Effect
+  ----------------------------------------- */
+  const typewriterHeadings = document.querySelectorAll(".section-content h2, .quote-inner h2, .quote-label");
+  
+  if (typewriterHeadings.length > 0) {
+    typewriterHeadings.forEach((heading) => {
+      // Get original HTML (to preserve <em> tags) and clear it
+      const originalHTML = heading.innerHTML;
+      heading.innerHTML = "";
+      
+      // Add a class for the blinking cursor
+      heading.classList.add("typewriter-cursor");
 
+      ScrollTrigger.create({
+        trigger: heading,
+        start: "top 85%",
+        once: true,
+        onEnter: () => {
+          gsap.to(heading, {
+            duration: originalHTML.length * 0.03, // Very fast, cinematic typing
+            text: {
+              value: originalHTML,
+              delimiter: "" // Handles HTML tags properly
+            },
+            ease: "none",
+            onComplete: () => {
+              // Remove the cursor after typing is done
+              heading.classList.remove("typewriter-cursor");
+            }
+          });
+        }
+      });
+    });
+  }
 
-  gsap.utils.toArray(".section-content h2, .quote-inner h2").forEach((heading) => {
-    const words = splitWords(heading);
-
-    gsap.from(words, {
-      yPercent: 115,
-      duration: 1.1,
-      ease: "expo.out",
-      stagger: 0.08,
-      scrollTrigger: { trigger: heading, start: START, once: true }
+  /* -----------------------------------------
+     5. Cinematic Curtain Reveals
+  ----------------------------------------- */
+  const reveals = document.querySelectorAll(".photo-band, .works-index");
+  reveals.forEach((section) => {
+    section.classList.add("reveal-curtain");
+    gsap.to(section, {
+      clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+      duration: 1.5,
+      ease: "power4.inOut",
+      scrollTrigger: {
+        trigger: section,
+        start: "top 85%",
+        once: true
+      }
     });
   });
 
+  /* -----------------------------------------
+     6. Interactive Velocity Marquee
+  ----------------------------------------- */
+  const marqueeTrack = document.querySelector(".marquee-track-js");
+  
+  if (marqueeTrack) {
+    const marqueeTween = gsap.to(marqueeTrack, {
+      xPercent: -50,
+      repeat: -1,
+      duration: 30,
+      ease: "none"
+    });
+
+    ScrollTrigger.create({
+      trigger: ".marquee",
+      start: "top bottom",
+      end: "bottom top",
+      onUpdate: (self) => {
+        const direction = self.direction === 1 ? 1 : -1;
+        marqueeTween.timeScale(direction * (1 + Math.abs(self.getVelocity()) / 1000));
+      }
+    });
+
+    marqueeTrack.addEventListener("mouseenter", () => marqueeTween.pause());
+    marqueeTrack.addEventListener("mouseleave", () => marqueeTween.play());
+  }
+
+  /* -----------------------------------------
+     7. Standard Fade-ups (Bio, Works, Kickers)
+  ----------------------------------------- */
   gsap.utils.toArray(".section-kicker").forEach((kicker) => {
     gsap.from(kicker, {
       autoAlpha: 0,
@@ -184,26 +282,6 @@
       scrollTrigger: { trigger: kicker, start: START, once: true }
     });
   });
-
-  // Photo band: the image drifts slowly inside its frame
-  const bandImage = document.querySelector(".photo-band-img");
-
-  if (bandImage) {
-    gsap.fromTo(
-      bandImage,
-      { yPercent: -6 },
-      {
-        yPercent: 6,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".photo-band",
-          start: "top bottom",
-          end: "bottom top",
-          scrub: true
-        }
-      }
-    );
-  }
 
   gsap.utils.toArray(".source-note, .section-subtitle, .closing-content p, .photo-band-caption").forEach((item) => {
     gsap.from(item, {
@@ -214,89 +292,60 @@
     });
   });
 
-  /* -----------------------------------------
-     4. Section 01: Biography
-  ----------------------------------------- */
+  if (document.querySelector(".bio-body")) {
+    gsap.from(".bio-body > *", {
+      autoAlpha: 0,
+      y: 36,
+      duration: 1,
+      stagger: 0.14,
+      scrollTrigger: { trigger: ".bio-body", start: START, once: true }
+    });
+  }
 
-  gsap.from(".bio-body > *", {
-    autoAlpha: 0,
-    y: 36,
-    duration: 1,
-    stagger: 0.14,
-    scrollTrigger: { trigger: ".bio-body", start: START, once: true }
-  });
-
-  /* -----------------------------------------
-     5. Section 02: Selected works
-     (the hover state is pure CSS in motion.css)
-  ----------------------------------------- */
-
-  gsap.from(".work-item", {
-    autoAlpha: 0,
-    y: 28,
-    duration: 0.9,
-    stagger: 0.09,
-    clearProps: "opacity,visibility,transform",
-    scrollTrigger: { trigger: ".works-index", start: START, once: true }
-  });
-
-  /* -----------------------------------------
-     6. Section 03: Timeline
-  ----------------------------------------- */
-
-  const timeline = document.querySelector(".timeline-list");
-
-  if (timeline) {
-    // The line draws as you scroll. Scrubbed tweens must be linear,
-    // so the line stays locked to the scrollbar.
-    gsap.fromTo(
-      timeline,
-      { "--line": 0 },
-      {
-        "--line": 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: timeline,
-          start: "top 60%",
-          end: "bottom 60%",
-          scrub: true
-        }
-      }
-    );
-
-    // Each milestone appears as the line head reaches it
-    gsap.utils.toArray(".milestone-item").forEach((item) => {
-      gsap.fromTo(
-        item,
-        { autoAlpha: 0, scale: 0.94, "--dot": 0 },
-        {
-          autoAlpha: 1,
-          scale: 1,
-          "--dot": 1,
-          duration: 1,
-          transformOrigin: "left center",
-          scrollTrigger: { trigger: item, start: "top 60%", once: true }
-        }
-      );
+  if (document.querySelector(".work-item")) {
+    gsap.from(".work-item", {
+      autoAlpha: 0,
+      y: 28,
+      duration: 0.9,
+      stagger: 0.09,
+      clearProps: "opacity,visibility,transform",
+      scrollTrigger: { trigger: ".works-index", start: START, once: true }
     });
   }
 
   /* -----------------------------------------
-     7. Section 04: Quote
+     8. Clean Timeline Reveal
   ----------------------------------------- */
+  const timelineList = document.querySelector(".timeline-list");
+  if (timelineList) {
+    gsap.from(".milestone-item", {
+      autoAlpha: 0,
+      y: 30,
+      duration: 1,
+      stagger: 0.15,
+      scrollTrigger: {
+        trigger: timelineList,
+        start: START,
+        once: true
+      }
+    });
+  }
 
+  /* -----------------------------------------
+     9. Quote Animation
+  ----------------------------------------- */
   const quote = document.querySelector(".editorial-quote");
+  const quoteSection = document.querySelector(".quote-section");
 
-  if (quote) {
-    // Parallax: drifts against the scroll so it appears to move slower
+  if (quote && quoteSection) {
     gsap.fromTo(
       quote,
-      { y: -80 },
+      { y: -40 },
       {
-        y: 80,
+        y: 40,
         ease: "none",
         scrollTrigger: {
-          trigger: ".quote-section",
+          trigger: quoteSection,
           start: "top bottom",
           end: "bottom top",
           scrub: true
@@ -304,7 +353,6 @@
       }
     );
 
-    // Red accent line draws from top to bottom
     gsap.fromTo(
       quote,
       { "--bar": 0 },
@@ -313,17 +361,13 @@
         ease: "none",
         scrollTrigger: {
           trigger: quote,
-          start: START,
+          start: "top 80%",
           end: "bottom 40%",
           scrub: true
         }
       }
     );
   }
-
-  /* -----------------------------------------
-     8. Footer
-  ----------------------------------------- */
 
   gsap.from(".footer-inner > div, .footer-bottom", {
     autoAlpha: 0,
@@ -333,10 +377,22 @@
     scrollTrigger: { trigger: ".site-footer", start: "clamp(top 80%)", once: true }
   });
 
-
   window.addEventListener("load", () => ScrollTrigger.refresh());
-
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => ScrollTrigger.refresh());
   }
 })();
+  // --- SCROLL PROGRESS BAR ---
+  const progressBar = document.querySelector(".scroll-progress-bar");
+  if (progressBar) {
+    gsap.to(progressBar, {
+      scaleX: 1,
+      ease: "none",
+      scrollTrigger: {
+        trigger: "body",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 0.3 // Adds a tiny bit of smoothing
+      }
+    });
+  }
