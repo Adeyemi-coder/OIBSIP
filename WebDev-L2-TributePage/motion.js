@@ -1,6 +1,6 @@
 /*
    MOTION LAYER: GSAP + ScrollTrigger + Lenis
-   Fully assembled with Fast Typewriter Headings.
+   Fully assembled with Mobile Fixes, Typewriter, and 3D Stacking.
 */
 
 (() => {
@@ -18,8 +18,9 @@
   gsap.defaults({ ease: "power3.out", duration: 1 });
 
   const START = "top 80%";
-  // --- CINEMATIC PRELOADER ---
-    /* -----------------------------------------
+  const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+  /* -----------------------------------------
      1. Cinematic Preloader (Homepage Only)
   ----------------------------------------- */
   const preloader = document.querySelector(".preloader");
@@ -27,13 +28,11 @@
   const preloaderCounter = document.querySelector(".preloader-counter");
 
   if (preloader) {
-    // Check if we are on the homepage (index.html) or a subpage
     const isHomePage = window.location.pathname.endsWith('index.html') || 
                        window.location.pathname === '/' || 
                        window.location.pathname.endsWith('/');
 
-    if (isHomePage) {
-      // RUN THE FULL ANIMATION on the homepage
+    if (isHomePage && !prefersReducedMotion) {
       const counter = { value: 0 };
       const tl = gsap.timeline();
       
@@ -57,16 +56,18 @@
           }
         }, "+=0.2");
     } else {
-      // SKIP THE ANIMATION on subpages
+      // Instantly hide on subpages to prevent flash/reload feeling
       preloader.style.display = "none";
     }
   }
+
   /* -----------------------------------------
-     1. Global: Lenis smooth scrolling
+     2. Global: Lenis smooth scrolling
   ----------------------------------------- */
   let lenis = null;
 
-  if (window.Lenis) {
+  // ONLY enable Lenis on desktop. Mobile touch scrolling is better natively.
+  if (window.Lenis && !isMobile) {
     lenis = new Lenis({
       duration: 0.8,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -89,30 +90,8 @@
     });
   }
 
-  function splitWords(element) {
-    if (!element) return [];
-    const text = element.textContent.trim().replace(/\s+/g, " ");
-    const words = text.split(" ");
-    element.setAttribute("aria-label", text);
-    element.textContent = "";
-    words.forEach((word, index) => {
-      const mask = document.createElement("span");
-      mask.className = "word-mask";
-      mask.setAttribute("aria-hidden", "true");
-      const inner = document.createElement("span");
-      inner.className = "word";
-      inner.textContent = word;
-      mask.appendChild(inner);
-      element.appendChild(mask);
-      if (index < words.length - 1) {
-        element.appendChild(document.createTextNode(" "));
-      }
-    });
-    return element.querySelectorAll(".word");
-  }
-
   /* -----------------------------------------
-     2. Hero (3D Carousel & Text Reveal)
+     3. Hero Section (3D Carousel & Entrance)
   ----------------------------------------- */
   const heroWords = gsap.utils.toArray(".hero-headline .word");
   const heroEyebrow = document.querySelector(".hero-text-col .eyebrow");
@@ -129,7 +108,10 @@
     
     root.classList.remove("motion-pending");
 
-    const intro = gsap.timeline({ defaults: { ease: "expo.out" } });
+    // Delay intro slightly if preloader is running to sync perfectly
+    const introDelay = (preloader && !isMobile) ? 2.5 : 0.2;
+
+    const intro = gsap.timeline({ defaults: { ease: "expo.out" }, delay: introDelay });
     if (heroEyebrow) intro.to(heroEyebrow, { autoAlpha: 1, y: 0, duration: 1 }, 0);
     intro.to(heroWords, { yPercent: 0, duration: 1.2, stagger: 0.14 }, 0.1);
     if (heroFades.length) intro.to(heroFades, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.12 }, 0.5);
@@ -141,7 +123,7 @@
   }
 
   /* -----------------------------------------
-     3. 3D Carousel Interaction
+     4. 3D Carousel Mouse & Scroll Interaction
   ----------------------------------------- */
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
   const heroSection = document.querySelector(".hero-section");
@@ -163,7 +145,7 @@
     });
   }
 
-  if (stage) {
+  if (stage && !isMobile) {
     const rate = { value: 1 };
     const setOrbitSpeed = (target) => {
       gsap.to(rate, {
@@ -191,17 +173,14 @@
   }
 
   /* -----------------------------------------
-     4. High-End Fast Typewriter Effect
+     5. High-End Fast Typewriter Effect
   ----------------------------------------- */
   const typewriterHeadings = document.querySelectorAll(".section-content h2, .quote-inner h2, .quote-label");
   
   if (typewriterHeadings.length > 0) {
     typewriterHeadings.forEach((heading) => {
-      // Get original HTML (to preserve <em> tags) and clear it
       const originalHTML = heading.innerHTML;
       heading.innerHTML = "";
-      
-      // Add a class for the blinking cursor
       heading.classList.add("typewriter-cursor");
 
       ScrollTrigger.create({
@@ -210,14 +189,13 @@
         once: true,
         onEnter: () => {
           gsap.to(heading, {
-            duration: originalHTML.length * 0.03, // Very fast, cinematic typing
+            duration: originalHTML.length * 0.03, 
             text: {
               value: originalHTML,
-              delimiter: "" // Handles HTML tags properly
+              delimiter: "" 
             },
             ease: "none",
             onComplete: () => {
-              // Remove the cursor after typing is done
               heading.classList.remove("typewriter-cursor");
             }
           });
@@ -227,7 +205,7 @@
   }
 
   /* -----------------------------------------
-     5. Cinematic Curtain Reveals
+     6. Cinematic Curtain Reveals
   ----------------------------------------- */
   const reveals = document.querySelectorAll(".photo-band, .works-index");
   reveals.forEach((section) => {
@@ -245,7 +223,7 @@
   });
 
   /* -----------------------------------------
-     6. Interactive Velocity Marquee
+     7. Interactive Velocity Marquee
   ----------------------------------------- */
   const marqueeTrack = document.querySelector(".marquee-track-js");
   
@@ -272,7 +250,7 @@
   }
 
   /* -----------------------------------------
-     7. Standard Fade-ups (Bio, Works, Kickers)
+     8. Standard Fade-ups (Bio, Kickers)
   ----------------------------------------- */
   gsap.utils.toArray(".section-kicker").forEach((kicker) => {
     gsap.from(kicker, {
@@ -314,25 +292,51 @@
   }
 
   /* -----------------------------------------
-     8. Clean Timeline Reveal
+     9. 3D Depth Stack Timeline
   ----------------------------------------- */
   const timelineList = document.querySelector(".timeline-list");
-  if (timelineList) {
+  const milestones = gsap.utils.toArray(".milestone-item");
+
+  if (timelineList && !isMobile) { // Disable heavy stacking on mobile for performance
+    milestones.forEach((item, i) => {
+      const textElements = item.querySelectorAll("h3, p");
+      gsap.from(textElements, {
+        y: 30,
+        opacity: 0,
+        duration: 1,
+        stagger: 0.1,
+        ease: "power3.out",
+        scrollTrigger: { trigger: item, start: "top 75%", once: true }
+      });
+
+      if (i !== milestones.length - 1) {
+        gsap.to(item, {
+          scale: 0.85,
+          opacity: 0,
+          y: -50,
+          ease: "none",
+          scrollTrigger: {
+            trigger: milestones[i + 1],
+            start: "top bottom",
+            end: "top 15vh",
+            scrub: true
+          }
+        });
+      }
+    });
+  } else if (timelineList && isMobile) {
+    // Simple fade-up for mobile timeline
     gsap.from(".milestone-item", {
       autoAlpha: 0,
       y: 30,
       duration: 1,
       stagger: 0.15,
-      scrollTrigger: {
-        trigger: timelineList,
-        start: START,
-        once: true
-      }
+      scrollTrigger: { trigger: timelineList, start: START, once: true }
     });
   }
 
   /* -----------------------------------------
-     9. Quote Animation
+     10. Quote Animation
   ----------------------------------------- */
   const quote = document.querySelector(".editorial-quote");
   const quoteSection = document.querySelector(".quote-section");
@@ -369,6 +373,9 @@
     );
   }
 
+  /* -----------------------------------------
+     11. Footer & Scroll Progress Bar
+  ----------------------------------------- */
   gsap.from(".footer-inner > div, .footer-bottom", {
     autoAlpha: 0,
     y: 40,
@@ -377,12 +384,6 @@
     scrollTrigger: { trigger: ".site-footer", start: "clamp(top 80%)", once: true }
   });
 
-  window.addEventListener("load", () => ScrollTrigger.refresh());
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => ScrollTrigger.refresh());
-  }
-})();
-  // --- SCROLL PROGRESS BAR ---
   const progressBar = document.querySelector(".scroll-progress-bar");
   if (progressBar) {
     gsap.to(progressBar, {
@@ -392,7 +393,13 @@
         trigger: "body",
         start: "top top",
         end: "bottom bottom",
-        scrub: 0.3 // Adds a tiny bit of smoothing
+        scrub: 0.3
       }
     });
   }
+
+  window.addEventListener("load", () => ScrollTrigger.refresh());
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => ScrollTrigger.refresh());
+  }
+})();
