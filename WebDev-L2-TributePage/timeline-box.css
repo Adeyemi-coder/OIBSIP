@@ -1,0 +1,83 @@
+/* Rolling timeline prism. Uses the tokens from style.css.
+   Without JavaScript, reduced motion or 3D support, this is a plain stacked list. */
+
+.cube { --step: 60deg; --r: 300px; --h: clamp(19rem, 52vw, 23rem); max-width: 640px; }
+
+.cube-box { margin: 0; padding: 0; list-style: none; }
+
+.cube-face {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: 1rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  background: var(--color-white);
+  border: 1px solid var(--color-line);
+  border-top: 3px solid var(--color-indigo);
+}
+.cube-face--nobel { border-top: 6px solid var(--color-red); }
+
+.cube-face time {
+  color: var(--color-indigo);
+  font: 400 clamp(3rem, 9vw, 5rem) / 1 var(--font-display);
+  font-variant-numeric: lining-nums;
+}
+.cube-face h3 {
+  margin: 0.75rem 0 0.5rem;
+  font: 400 clamp(1.5rem, 3.5vw, 2.1rem) / 1.15 var(--font-display);
+}
+.cube-face p { margin: 0; max-width: 46ch; font-size: 1rem; line-height: 1.6; }
+.cube-face .cube-src { margin-top: 1rem; color: var(--color-muted); font-size: 0.8rem; }
+
+/* Controls only exist when the 3D version is active */
+.cube-controls, .cube-status { display: none; }
+
+.cube.is-3d .cube-stage { height: var(--h); perspective: 1500px; }
+.cube.is-3d .cube-box {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.9s var(--ease-out);
+}
+.cube.is-3d .cube-face {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateX(calc(var(--i) * var(--step) * -1)) translateZ(var(--r));
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.cube.is-3d .cube-face[data-off="0"] { opacity: 1; }
+.cube.is-3d .cube-face[data-off="1"],
+.cube.is-3d .cube-face[data-off="-1"] { opacity: 0.3; }
+
+.cube.is-3d .cube-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: 1.5rem;
+}
+.cube.is-3d .cube-status {
+  display: block;
+  margin: 0.75rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.cube-btn, .cube-chip {
+  min-height: 44px;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--color-indigo);
+  background: transparent;
+  color: var(--color-indigo);
+  font-family: var(--font-condensed);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.cube-btn:hover, .cube-chip:hover { background: var(--color-indigo); color: var(--color-white); }
+.cube-chip[aria-current="true"] { background: var(--color-indigo); color: var(--color-white); }
+
+.cube-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }

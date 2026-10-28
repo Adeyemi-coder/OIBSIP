@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Verdant | Calculator</title>
+  <meta name="description" content="A calculator with a scientific mode, nursing dosage tools and unit converters. Forty nursing formulas drift through the scene behind the keys.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#CFE3CC">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Verdant">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var memory = navigator.deviceMemory || 8, cores = navigator.hardwareConcurrency || 8;
+      var saveData = navigator.connection && navigator.connection.saveData;
+      if (memory <= 2 || cores <= 2 || saveData) root.classList.add("lite");
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500&display=swap">
+
+  <link rel="stylesheet" href="style.css">
+  
+  <script src="formulas.js" defer></script>
+  <script src="script.js" defer></script>
+  <script src="tools.js" defer></script>
+</head>
+
+<body>
+  <a class="skip-link" href="#calculator">Skip to calculator</a>
+
+  <div class="scene" aria-hidden="true">
+    <div class="scene__light"></div>                        
+    <div class="formula-field" id="formula-field"></div>
+    <div class="scene__tunnel"><div class="tunnel"><div class="tunnel__sway" id="echo-layer"></div></div></div>
+    <div class="scene__terrain"></div>                        
+  </div>
+
+  <header class="site-header">
+    <p class="wordmark">VERDANT</p>
+    <div class="site-header__actions">
+      <button type="button" class="scene-toggle" id="install-btn" hidden>Install app</button>
+      
+      <!-- Sound Button with SVG and Text -->
+      <button type="button" class="scene-toggle" id="sound-toggle" aria-pressed="false" aria-label="Toggle Sound">
+        <svg class="icon-mobile" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+        <span class="text-desktop">Sound</span>
+      </button>
+      
+  
+      <button type="button" class="scene-toggle" id="scene-toggle" aria-pressed="false" aria-label="Toggle Calm Mode">
+        <svg class="icon-mobile" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+          <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+        </svg>
+        <span class="text-desktop">Calm mode</span>
+      </button>
+            <!-- Add this Theme Toggle Button -->
+      <button type="button" class="scene-toggle" id="theme-toggle" aria-label="Toggle Dark Mode" aria-pressed="false">
+        <!-- Moon Icon (Shows in Light Mode) -->
+        <svg class="icon-moon icon-mobile" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <!-- Sun Icon (Shows in Dark Mode) -->
+        <svg class="icon-sun icon-mobile" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+          <circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <span class="text-desktop">Dark Mode</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="stage">
+
+    <!-- Mobile text toggle button -->
+    <button type="button" id="mobile-info-btn" class="mobile-info-btn" aria-expanded="false" aria-controls="intro-title concept-title">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      <span>Read Project Info</span>
+    </button>
+
+    <section class="intro mobile-collapsible" aria-labelledby="intro-title">
+      <h1 id="intro-title">Maths that grows.</h1>
+      <p>Every answer you calculate grows into the scene behind the keys.</p>
+      <p class="intro__hint">Keyboard works too: digits, + - * /, Enter, Backspace, Escape. In Sci mode, ( ) and ^ work as well.</p>
+    </section>
+
+    <section class="calculator" id="calculator" aria-label="Calculator" data-mode="basic">
+     
+      <div class="calculator__rig">
+        <div class="calculator__shadow" aria-hidden="true"></div>
+        <div class="calculator__body">
+
+          <div class="tabs" role="tablist" aria-label="Calculator mode">
+            <button type="button" class="tab" role="tab" id="tab-basic"   data-tab="basic"   aria-selected="true"  aria-controls="panel-basic"   tabindex="0">Calc</button>
+            <button type="button" class="tab" role="tab" id="tab-sci"     data-tab="sci"     aria-selected="false" aria-controls="panel-sci"     tabindex="-1">Sci</button>
+            <button type="button" class="tab" role="tab" id="tab-nursing" data-tab="nursing" aria-selected="false" aria-controls="panel-nursing" tabindex="-1">Nursing</button>
+            <button type="button" class="tab" role="tab" id="tab-convert" data-tab="convert" aria-selected="false" aria-controls="panel-convert" tabindex="-1">Convert</button>
+          </div>
+
+          <div class="display">
+            <button type="button" class="display__copy" id="copy-result" aria-label="Copy result">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <span class="display__mem" id="mem-badge" hidden>M</span>
+            <p class="display__expression" id="expression" aria-hidden="true"></p>
+            <output class="display__result" id="result" for="keypad sci-keypad" aria-live="off">0</output>
+          </div>
+
+          <div class="panel" id="panel-basic" role="tabpanel" aria-labelledby="tab-basic">
+            <div class="memrow" role="group" aria-label="Memory keys">
+              <button type="button" class="key key--mem" data-action="mc"     aria-label="Memory clear">MC</button>
+              <button type="button" class="key key--mem" data-action="mr"     aria-label="Memory recall">MR</button>
+              <button type="button" class="key key--mem" data-action="mplus"  aria-label="Add to memory">M+</button>
+              <button type="button" class="key key--mem" data-action="mminus" aria-label="Subtract from memory">M&minus;</button>
+            </div>
+
+            <div class="keypad" id="keypad" role="group" aria-label="Calculator keys">
+              <button type="button" class="key key--clear"    data-action="clear"     aria-label="All clear">AC</button>
+              <button type="button" class="key key--func"     data-action="backspace" aria-label="Backspace">&#9003;</button>
+              <button type="button" class="key key--func"     data-action="percent"   aria-label="Percent">%</button>
+              <button type="button" class="key key--operator" data-action="operator"  data-operator="divide"   aria-label="Divide">&divide;</button>
+
+              <button type="button" class="key key--number" data-action="digit" data-value="7">7</button>
+              <button type="button" class="key key--number" data-action="digit" data-value="8">8</button>
+              <button type="button" class="key key--number" data-action="digit" data-value="9">9</button>
+              <button type="button" class="key key--operator" data-action="operator" data-operator="multiply" aria-label="Multiply">&times;</button>
+
+              <button type="button" class="key key--number" data-action="digit" data-value="4">4</button>
+              <button type="button" class="key key--number" data-action="digit" data-value="5">5</button>
+              <button type="button" class="key key--number" data-action="digit" data-value="6">6</button>
+              <button type="button" class="key key--operator" data-action="operator" data-operator="subtract" aria-label="Subtract">&minus;</button>
+
+              <button type="button" class="key key--number" data-action="digit" data-value="1">1</button>
+              <button type="button" class="key key--number" data-action="digit" data-value="2">2</button>
+              <button type="button" class="key key--number" data-action="digit" data-value="3">3</button>
+              <button type="button" class="key key--operator" data-action="operator" data-operator="add" aria-label="Add">+</button>
+
+              <button type="button" class="key key--func"   data-action="negate"  aria-label="Plus or minus">&plusmn;</button>
+              <button type="button" class="key key--number" data-action="digit" data-value="0">0</button>
+              <button type="button" class="key key--number" data-action="decimal" aria-label="Decimal point">.</button>
+              <button type="button" class="key key--equals" data-action="equals"  aria-label="Equals">=</button>
+            </div>
+          </div>
+
+          <div class="panel" id="panel-sci" role="tabpanel" aria-labelledby="tab-sci" hidden>
+            <div class="keypad keypad--sci" id="sci-keypad" role="group" aria-label="Scientific keys">
+              <button type="button" class="key key--clear"    data-action="sci-clear" aria-label="All clear">AC</button>
+              <button type="button" class="key key--func"     data-action="sci-input" data-value="(" aria-label="Open bracket">(</button>
+              <button type="button" class="key key--func"     data-action="sci-input" data-value=")" aria-label="Close bracket">)</button>
+              <button type="button" class="key key--func"     data-action="sci-back"  aria-label="Backspace">&#9003;</button>
+              <button type="button" class="key key--operator" data-action="sci-input" data-value="&divide;" aria-label="Divide">&divide;</button>
+
+              <button type="button" class="key key--func"     data-action="sci-input" data-value="&#8730;(" aria-label="Square root">&radic;</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="7">7</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="8">8</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="9">9</button>
+              <button type="button" class="key key--operator" data-action="sci-input" data-value="&times;" aria-label="Multiply">&times;</button>
+
+              <button type="button" class="key key--func"     data-action="sci-input" data-value="^2" aria-label="Squared">x&sup2;</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="4">4</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="5">5</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="6">6</button>
+              <button type="button" class="key key--operator" data-action="sci-input" data-value="&minus;" aria-label="Subtract">&minus;</button>
+
+              <button type="button" class="key key--func"     data-action="sci-input" data-value="^" aria-label="To the power of">x&#696;</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="1">1</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="2">2</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="3">3</button>
+              <button type="button" class="key key--operator" data-action="sci-input" data-value="+" aria-label="Add">+</button>
+
+              <button type="button" class="key key--func"     data-action="sci-input" data-value="&pi;" aria-label="Pi">&pi;</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="0">0</button>
+              <button type="button" class="key key--number"   data-action="sci-input" data-value="." aria-label="Decimal point">.</button>
+              <button type="button" class="key key--func"     data-action="sci-input" data-value="e" aria-label="Euler's number e">e</button>
+              <button type="button" class="key key--equals"   data-action="sci-equals" aria-label="Equals">=</button>
+            </div>
+          </div>
+
+          <div class="panel panel--tool" id="panel-nursing" role="tabpanel" aria-labelledby="tab-nursing" hidden></div>
+          <div class="panel panel--tool" id="panel-convert" role="tabpanel" aria-labelledby="tab-convert" hidden></div>
+
+        </div>
+      </div>
+
+      <p class="visually-hidden" id="announcer" role="status" aria-live="polite"></p>
+      <p class="signature">Built by <a href="https://www.linkedin.com/in/adeyemi-kehinde-rn" target="_blank" rel="noopener noreferrer">ADEYEMI KEHINDE<span class="visually-hidden"> on LinkedIn (opens in a new tab)</span></a></p>
+    </section>
+
+    <aside class="history" aria-label="Calculation history">
+      <details>
+        <summary>History</summary>
+        <ol class="history__list" id="history-list" reversed></ol>
+        <p class="history__empty" id="history-empty">Your calculations will appear here. Tap one to reuse its result.</p>
+        <button type="button" class="history__clear" data-action="clear-history" hidden>Clear history</button>
+      </details>
+    </aside>
+
+    <section class="concept mobile-collapsible" aria-labelledby="concept-title">
+      <h2 id="concept-title">How it works</h2>
+      <p><strong>Calc</strong> evaluates operations in the order you enter them, like a desk calculator: 5 + 3 &times; 2 gives 16. Percent works the way a shop till does: 200 + 10 % gives 220. MC, MR, M+ and M&minus; keep a number in memory. <strong>Sci</strong> follows true order of operations with brackets, powers and square roots: 5 + 3 &times; 2 gives 11.</p>
+      <p>Press equals and the full equation sprouts from the ground behind the calculator, then settles into the scene. Older equations grow fainter and drift deeper. Calm mode hides them. The History list holds the same record as text, is kept on this device, and lets you tap a result to reuse it.</p>
+      <p><strong>Nursing</strong> has twelve calculators, from dosage and drip rates to MAP and Parkland, each with sanity checks, plus a searchable library of forty formulas. <strong>Convert</strong> switches between weights, volumes, temperatures, lengths and times. Add Verdant to your home screen and it also works offline.</p>
+      <p>The tools are a study aid. Always check calculations against your facility&rsquo;s protocols, and have high-alert medications verified by a second nurse or your pharmacist.</p>
+    </section>
+
+  </main>
+
+  <div class="scene scene--front" aria-hidden="true">
+    <div class="scene__terrain-front"></div>
+  </div>
+
+  <footer class="site-footer">
+    <p>Designed and built by <a href="https://www.linkedin.com/in/adeyemi-kehinde-rn" target="_blank" rel="noopener noreferrer">ADEYEMI KEHINDE</a></p>
+    <p>Oasis Infobyte Web Development &amp; Designing Internship, Task 1</p>
+  </footer>
+
+  <div class="toast" id="toast" aria-hidden="true"></div>
+
+  <noscript><p class="noscript">This calculator needs JavaScript to work. Please enable it and reload.</p></noscript>
+</body>
+</html>
