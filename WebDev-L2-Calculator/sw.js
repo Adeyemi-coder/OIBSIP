@@ -1,10 +1,6 @@
-/* VERDANT - service worker (offline support)
-   Strategy: network first with a short timeout, then the saved copy. You always get the newest files when online,
-   and the whole app still opens with no signal. Google Fonts are saved after first use.
-   When you change any file, raise the number in CACHE so old copies are cleared. */
 "use strict";
 
-const CACHE = "verdant-v1";
+const CACHE = "verdant-v2"; 
 const FILES = [
   "./", "index.html", "style.css", "formulas.js", "script.js", "tools.js",
   "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"

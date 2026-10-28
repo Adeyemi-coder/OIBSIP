@@ -1,10 +1,4 @@
-/* VERDANT - nursing tools and unit converter
-   Fills the two empty panels in index.html:
-     Nursing tab: 12 calculators with sanity checks, plus a searchable library of the 40 formulas
-     Convert tab: weight, volume, temperature, length and time
-   Needs: script.js (window.Verdant: useValue, record, speak, setMode) and formulas.js (window.VERDANT_FORMULAS, optional).
-   Privacy: nothing you type is stored, except a result you choose to save to history. The name of the last calculator you opened is also remembered on this device.
-   Study aid only: check every result against your facility protocols. Everything lives inside one function, so it adds no globals. */
+
 "use strict";
 
 (function () {

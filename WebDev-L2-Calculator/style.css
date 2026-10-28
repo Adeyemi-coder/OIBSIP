@@ -538,24 +538,22 @@ html.lite .formula { backdrop-filter: none; background: rgba(255,255,255,.8); }
   color: var(--ink) !important; /* Light text */
   border-color: rgba(255, 255, 255, 0.15) !important;
   
-  /* Swap the dark chevron for a light one */
+
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23A3B8A7' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
 }
 
-/* 2. Fix the actual dropdown menu items (The popup list) */
 [data-theme="dark"] select.control option {
   background-color: #122117 !important; 
   color: var(--ink) !important;
 }
 
-/* 3. Fix standard text inputs (like Weight / Burn area) */
+
 [data-theme="dark"] input.control {
   background-color: rgba(255, 255, 255, 0.05) !important;
   color: var(--ink) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 4. Fix the placeholder text in inputs */
 [data-theme="dark"] input.control::placeholder {
   color: var(--ink-dim) !important;
   opacity: 0.6;
@@ -565,4 +563,30 @@ html.lite .formula { backdrop-filter: none; background: rgba(255,255,255,.8); }
 [data-theme="dark"] .library .control {
   background-color: rgba(255, 255, 255, 0.05) !important;
   color: var(--ink) !important;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  [data-theme="dark"] .calculator__body { 
+    background: #0A1B12 !important; 
+  }
+  [data-theme="dark"] .display { 
+    background: #040806 !important; 
+  }
+}
+
+
+[data-theme="dark"] .tab[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #F0F5F2 !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Force the calculator body to stay dark */
+[data-theme="dark"] .calculator__body {
+  background: rgba(10, 20, 15, 0.85) !important;
+}
+
+/* Force the display to stay dark */
+[data-theme="dark"] .display {
+  background: rgba(0, 0, 0, 0.6) !important;
 }
