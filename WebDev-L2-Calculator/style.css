@@ -640,3 +640,43 @@ html.lite .formula { backdrop-filter: none; background: rgba(255,255,255,.8); }
 [data-theme="dark"] .scene-toggle:hover {
   background: rgba(255, 255, 255, 0.1) !important;
 }
+
+
+[data-theme="dark"] {
+  color-scheme: dark !important;
+}
+
+
+[data-theme="dark"] select.control {
+  background-color: #0A1B12 !important; /* Deep dark green */
+  color: #F0F5F2 !important; /* Bright off-white text */
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23A3B8A7' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+
+[data-theme="dark"] select.control option {
+  background-color: #0A1B12 !important;
+  color: #F0F5F2 !important;
+  font-weight: 500;
+  padding: 10px;
+}
+
+/* 4. Fix the hover state inside the open dropdown */
+[data-theme="dark"] select.control option:checked,
+[data-theme="dark"] select.control option:hover {
+  background-color: #4A7C59 !important; /* Highlights the selected item in green */
+  color: #FFFFFF !important;
+}
+
+/* 5. Fix the "Search Formulas" text input just in case */
+[data-theme="dark"] .library .control {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #F0F5F2 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+[data-theme="dark"] .library .control::placeholder {
+  color: #A3B8A7 !important;
+}
