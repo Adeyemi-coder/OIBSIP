@@ -581,12 +581,62 @@ html.lite .formula { backdrop-filter: none; background: rgba(255,255,255,.8); }
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* Force the calculator body to stay dark */
+
 [data-theme="dark"] .calculator__body {
   background: rgba(10, 20, 15, 0.85) !important;
 }
 
-/* Force the display to stay dark */
+
 [data-theme="dark"] .display {
   background: rgba(0, 0, 0, 0.6) !important;
+}
+
+
+[data-theme="dark"] .intro {
+  background: rgba(20, 35, 25, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+[data-theme="dark"] .intro h1 {
+  color: #F0F5F2 !important;
+}
+[data-theme="dark"] .intro p {
+  color: #A3B8A7 !important;
+}
+
+/* 2. The History Drawer */
+[data-theme="dark"] .history {
+  background: rgba(20, 35, 25, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+[data-theme="dark"] .history summary {
+  color: #A3B8A7 !important;
+}
+[data-theme="dark"] .history summary:hover {
+  color: #F0F5F2 !important;
+}
+[data-theme="dark"] .history__item {
+  color: #F0F5F2 !important;
+}
+
+/* 3. The Floating Formula Cards */
+[data-theme="dark"] .formula {
+  background: rgba(20, 35, 25, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="dark"] .formula__name {
+  color: #A3B8A7 !important;
+}
+[data-theme="dark"] .formula__text {
+  color: #F0F5F2 !important;
+}
+
+/* 4. The Header Toggle Buttons (Sound, Calm Mode) */
+[data-theme="dark"] .scene-toggle {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #F0F5F2 !important;
+}
+[data-theme="dark"] .scene-toggle:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
 }
