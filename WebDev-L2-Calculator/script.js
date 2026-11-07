@@ -929,6 +929,107 @@ if (themeToggle) {
     }
   });
 }
+
+// ---------------------------------------------------------
+// 13. CURRENCY CONVERTER (INJECTED INTO CONVERT TAB)
+// ---------------------------------------------------------
+setTimeout(() => {
+  const convertPanel = document.getElementById("panel-convert");
+  
+
+  if (convertPanel && !document.getElementById("currency-tool")) {
+    
+    const currencyHTML = `
+      <div id="currency-tool" style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--edge);">
+        <label class="field__label" style="display:block; margin-bottom:8px;">Currency Converter</label>
+        
+        <div class="field" style="margin-bottom: 12px;">
+          <input type="number" id="cur-amount" class="control" placeholder="Enter amount (e.g. 1000)">
+        </div>
+        
+        <div class="convert-row">
+          <select id="cur-from" class="control">
+            <option value="USD">USD ($)</option>
+            <option value="NGN">NGN (₦)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="EUR">EUR (€)</option>
+          </select>
+          <button type="button" class="btn btn--icon" id="cur-swap" aria-label="Swap currencies">⇄</button>
+          <select id="cur-to" class="control">
+            <option value="NGN">NGN (₦)</option>
+            <option value="USD">USD ($)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="EUR">EUR (€)</option>
+          </select>
+        </div>
+        
+        <div class="result-card" style="margin-top: 16px; min-height: 80px; display: flex; align-items: center; justify-content: flex-start;">
+          <div class="result-card__value is-empty" id="cur-result" style="font-size: 28px;">---</div>
+        </div>
+      </div>
+    `;
+    
+    // Insert the currency tool at the top of the Convert tab
+    convertPanel.insertAdjacentHTML('afterbegin', currencyHTML);
+
+    // Bind the logic
+    const curAmount = document.getElementById("cur-amount");
+    const curFrom = document.getElementById("cur-from");
+    const curTo = document.getElementById("cur-to");
+    const curResult = document.getElementById("cur-result");
+    const curSwap = document.getElementById("cur-swap");
+    
+    // Static exchange rates (Base: 1 USD)
+    // You can update these numbers to the current real-world rates
+    const EXCHANGE_RATES = { 
+      USD: 1, 
+      NGN: 1500, 
+      GBP: 0.79, 
+      EUR: 0.92 
+    };
+
+    const calculateCurrency = () => {
+      const amount = parseFloat(curAmount.value);
+      
+      if (isNaN(amount) || amount <= 0) {
+        curResult.textContent = "---";
+        curResult.classList.add("is-empty");
+        return;
+      }
+
+      const from = curFrom.value;
+      const to = curTo.value;
+      
+      // Convert to USD first, then to target currency
+      const inUSD = amount / EXCHANGE_RATES[from];
+      const finalAmount = inUSD * EXCHANGE_RATES[to];
+      
+      // Native browser formatting for currency (adds symbols and commas)
+      const formatter = new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency: to,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      
+      curResult.textContent = formatter.format(finalAmount);
+      curResult.classList.remove("is-empty");
+    };
+
+    // Event Listeners
+    curAmount.addEventListener("input", calculateCurrency);
+    curFrom.addEventListener("change", calculateCurrency);
+    curTo.addEventListener("change", calculateCurrency);
+    
+    // Swap Button Logic
+    curSwap.addEventListener("click", () => {
+      const temp = curFrom.value;
+      curFrom.value = curTo.value;
+      curTo.value = temp;
+      calculateCurrency();
+    });
+  }
+}, 500); 
 // Initial render
 render();
 renderHistory();
