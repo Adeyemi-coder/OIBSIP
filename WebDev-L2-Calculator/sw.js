@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "verdant-v2"; 
+const CACHE = "verdant-v3";
 const FILES = [
   "./", "index.html", "style.css", "formulas.js", "script.js", "tools.js",
   "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"

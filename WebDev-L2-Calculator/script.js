@@ -1030,6 +1030,90 @@ setTimeout(() => {
     });
   }
 }, 500); 
-// Initial render
+
+// ---------------------------------------------------------
+// 12. CURRENCY CONVERTER (top of the Convert tab)
+// Fetches current rates when online. If that fails, it uses the approximate rates below and says so on screen.
+// ---------------------------------------------------------
+(function () {
+  const convertPanel = document.getElementById("panel-convert");
+  if (!convertPanel || document.getElementById("currency-tool")) return;
+
+  const CURRENCIES = ["USD", "NGN", "GBP", "EUR"];
+  const rates = { USD: 1, NGN: 1500, GBP: 0.79, EUR: 0.92 };   // approximate fallback (1 USD = ...). Update these now and then.
+  let live = false, updated = "";
+
+  const tool = document.createElement("div");
+  tool.id = "currency-tool";
+  tool.style.cssText = "margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--edge)";
+  const options = function (selected) {
+    return CURRENCIES.map(function (c) { return '<option value="' + c + '"' + (c === selected ? " selected" : "") + ">" + c + "</option>"; }).join("");
+  };
+  tool.innerHTML =
+    '<div class="field" style="margin-bottom:12px"><label class="field__label" for="cur-amount">Currency converter</label>' +
+    '<input type="text" id="cur-amount" class="control" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="Amount, e.g. 1000"></div>' +
+    '<div class="convert-row"><select id="cur-from" class="control" aria-label="Convert from">' + options("USD") + "</select>" +
+    '<button type="button" class="btn btn--icon" id="cur-swap" aria-label="Swap currencies">&#8644;</button>' +
+    '<select id="cur-to" class="control" aria-label="Convert to">' + options("NGN") + "</select></div>" +
+    '<div class="result-card" style="margin-top:16px;min-height:80px;display:flex;align-items:center"><div class="result-card__value is-empty" id="cur-result" style="font-size:28px">&mdash;</div></div>' +
+    '<p class="result-card__note" id="cur-note"></p>';
+  convertPanel.insertBefore(tool, convertPanel.firstChild);   // tools.js adds the other converters after this
+
+  const amountEl = tool.querySelector("#cur-amount"), fromEl = tool.querySelector("#cur-from"), toEl = tool.querySelector("#cur-to");
+  const resultEl2 = tool.querySelector("#cur-result"), noteEl = tool.querySelector("#cur-note");
+
+  function showNote() {
+    noteEl.textContent = live
+      ? "Live rates from exchangerate-api.com" + (updated ? ", updated " + updated : "") + "."
+      : "Approximate rates, for guidance only. Check your bank for the exact amount.";
+  }
+
+  // Returns the spoken text, or "" when there is nothing to show
+  function compute() {
+    const text = amountEl.value.trim().replace(",", ".");
+    resultEl2.classList.add("is-empty");
+    if (text === "") { resultEl2.textContent = "\u2014"; return ""; }
+    const n = /^(\d+\.?\d*|\.\d+)$/.test(text) ? Number(text) : NaN;
+    if (!(n > 0) || n > 1e12) { resultEl2.textContent = "Enter a number above 0"; return ""; }
+    const out = n / rates[fromEl.value] * rates[toEl.value];
+    const shown = new Intl.NumberFormat("en-NG", { style: "currency", currency: toEl.value }).format(out);
+    resultEl2.textContent = shown;
+    resultEl2.classList.remove("is-empty");
+    return text + " " + fromEl.value + " is " + shown;
+  }
+
+  amountEl.addEventListener("input", compute);
+  amountEl.addEventListener("change", function () { const spoken = compute(); if (spoken) speak(spoken); });
+  [fromEl, toEl].forEach(function (select) { select.addEventListener("change", function () { const spoken = compute(); if (spoken) speak(spoken); }); });
+  tool.querySelector("#cur-swap").addEventListener("click", function () {
+    const keep = fromEl.value; fromEl.value = toEl.value; toEl.value = keep;
+    const spoken = compute(); if (spoken) speak(spoken);
+  });
+
+  function loadLiveRates() {
+    if (typeof fetch !== "function" || navigator.onLine === false) return;
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
+    const timer = setTimeout(function () { if (controller) controller.abort(); }, 6000);
+    fetch("https://open.er-api.com/v6/latest/USD", controller ? { signal: controller.signal } : undefined)
+      .then(function (response) { return response.ok ? response.json() : Promise.reject(new Error("bad response")); })
+      .then(function (data) {
+        const fresh = data && data.rates;
+        if (!fresh || !CURRENCIES.every(function (c) { return Number.isFinite(fresh[c]) && fresh[c] > 0; })) return;
+        CURRENCIES.forEach(function (c) { rates[c] = fresh[c]; });
+        live = true;
+        const date = data.time_last_update_utc ? new Date(data.time_last_update_utc) : null;
+        updated = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : "";
+        showNote();
+        compute();
+      })
+      .catch(function () { /* stay on the approximate rates */ })
+      .then(function () { clearTimeout(timer); });
+  }
+
+  showNote();
+  loadLiveRates();
+})();
+
+
 render();
 renderHistory();

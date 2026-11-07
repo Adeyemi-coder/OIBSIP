@@ -1,4 +1,3 @@
-
 "use strict";
 
 (function () {
@@ -26,13 +25,11 @@
     return pattern.test(text) ? Number(text) : NaN;
   }
 
-  // Round to dp decimals without trailing zeros. Tiny non-zero results keep 2 significant digits instead of showing 0.
   function fmt(n, dp) {
     if (n !== 0 && Math.abs(n) < Math.pow(10, -dp)) return String(Number(n.toPrecision(2)));
     return String(Number(n.toFixed(dp)));
   }
 
-  // Converter output: 8 significant digits removes float noise (1 g to mcg is 1000000, not 1000000.0000000001)
   function sig(n) {
     if (n === 0) return "0";
     const abs = Math.abs(n);
@@ -43,12 +40,9 @@
   function remember(id) { try { localStorage.setItem("verdant.tool", id); } catch (error) { /* storage can be blocked */ } }
   function recall() { try { return localStorage.getItem("verdant.tool"); } catch (error) { return null; } }
 
-  /* ---------- 2. NURSING CALCULATORS ----------
-     Each calculator: fields to fill in, and compute(v) which returns
-       { value, dp, unit, parts, detail, warnings }   or   { error: "message" }
-     "parts" is the working shown in history and in the equation tunnel, e.g. ["250","÷","500","×","2"]. */
-  function numField(key, label, unit, placeholder, optional) {
-    return { k: key, label: label, unit: unit, ph: placeholder || "", optional: !!optional };
+  // zero = true lets a field accept 0 (for example "total output" in a fluid balance)
+  function numField(key, label, unit, placeholder, optional, zero) {
+    return { k: key, label: label, unit: unit, ph: placeholder || "", optional: !!optional, zero: !!zero };
   }
   function pickField(key, label, options, fallback) {
     return { k: key, label: label, type: "select", options: options, value: fallback };
@@ -66,6 +60,7 @@
     return list;
   }
 
+  /* ---------- 2. THE CALCULATORS (12 here, plus 23 more from formulas.js) ---------- */
   const CALCS = [
     {
       id: "dose", name: "Dose (desired ÷ have × quantity)", label: "Dose", formula: "desired ÷ have × quantity",
@@ -194,6 +189,8 @@
       }
     }
   ];
+  // The other 23 calculators live in formulas.js (loaded first). Adding them here puts them in the dropdown too.
+  (window.VERDANT_EXTRA_CALCS || []).forEach(function (c) { CALCS.push(c); });
   const CALC_BY_ID = {};
   CALCS.forEach(function (c) { CALC_BY_ID[c.id] = c; });
 
@@ -273,7 +270,7 @@
   }
 
   // Library formulas that have a calculator or a converter preset get an "Open" button.
-  // Declared before the tabs are built, because building the library reads it straight away.
+  // The name must match the library name in formulas.js exactly.
   const LIB = {
     "Dose": ["calc", "dose"], "Drip rate": ["calc", "drip"], "Pump rate": ["calc", "pump"], "Weight-based dose": ["calc", "weightdose"],
     "BMI": ["calc", "bmi"], "BSA (Mosteller)": ["calc", "bsa"], "MAP": ["calc", "map"], "Pulse pressure": ["calc", "map"],
@@ -282,6 +279,14 @@
     "°C to °F": ["convert", "temperature", "c", "f"], "°F to °C": ["convert", "temperature", "f", "c"],
     "lb to kg": ["convert", "weight", "lb", "kg"], "mg to mcg": ["convert", "weight", "mg", "mcg"]
   };
+  Object.assign(LIB, window.VERDANT_EXTRA_LIB || {});    // the 23 extra calculators from formulas.js
+
+  // A helpful warning in the browser console (F12) if something is not wired up
+  (function checkWiring() {
+    if (!window.VERDANT_EXTRA_CALCS) console.warn("Verdant: formulas.js did not load before tools.js, or an old cached copy is being used. Hard-refresh, or clear the service worker cache.");
+    const missing = (window.VERDANT_FORMULAS || []).filter(function (f) { return !LIB[f[0]]; }).map(function (f) { return f[0]; });
+    if (missing.length) console.warn("Verdant: formulas with no Open button:", missing);
+  })();
 
   /* ---------- 5. NURSING TAB ---------- */
   const nr = {};
@@ -338,7 +343,7 @@
       const n = parseNumber(node.value, false);
       v[f.k] = null;
       if (n === null) { if (!f.optional) missing = true; return; }
-      if (Number.isNaN(n) || n <= 0 || n > 1e7) { if (!problem) problem = f.label + " must be a number above 0."; return; }
+      if (Number.isNaN(n) || n < 0 || (n === 0 && !f.zero) || n > 1e7) { if (!problem) problem = f.label + (f.zero ? " must be a number of 0 or more." : " must be a number above 0."); return; }
       v[f.k] = n;
     });
 
@@ -354,7 +359,7 @@
       } else if (!Number.isFinite(out.value) || Math.abs(out.value) > 1e9) {
         paint(nr.ui, { warnings: ["That result is out of range. Check the numbers."], note: activeCalc.note });
       } else {
-        const valueText = fmt(out.value, out.dp);
+        const valueText = out.text || fmt(out.value, out.dp);       // out.text is for results that are not plain numbers (a date)
         const expression = out.parts.join(" ");
         paint(nr.ui, { valueText: valueText, unit: out.unit, detail: out.detail, warnings: out.warnings, note: activeCalc.note });
         nursingOut = {
@@ -366,7 +371,7 @@
       }
     }
     nr.actions.save.disabled = !nursingOut;
-    nr.actions.use.disabled = !nursingOut;
+    nr.actions.use.disabled = !nursingOut || !/^-?[0-9.]+$/.test(nursingOut.valueText);   // a date cannot be loaded onto the calculator
   }
 
   function selectCalc(id) {
@@ -421,7 +426,7 @@
     selectCalc(saved && CALC_BY_ID[saved] ? saved : CALCS[0].id);
   })();
 
-  /* ---------- 6. FORMULA LIBRARY (the same 40 formulas that float behind the calculator) ---------- */
+  /* ---------- 6. FORMULA LIBRARY (the same 40 formulas that pop up behind the calculator) ---------- */
   function openFromLibrary(name) {
     const target = LIB[name];
     if (!target) return;
