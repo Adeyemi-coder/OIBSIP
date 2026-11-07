@@ -8,13 +8,13 @@
   "theme_color": "#2D4A32",
   "icons": [
     {
-      "src": "https://ui-avatars.com/api/?name=V&background=2D4A32&color=fff&size=192",
+      "src": "./android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://ui-avatars.com/api/?name=V&background=2D4A32&color=fff&size=512",
+      "src": "./android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

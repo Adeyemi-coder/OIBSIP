@@ -1,9 +1,9 @@
 "use strict";
 
-const CACHE = "verdant-v3";
+const CACHE = "verdant-v5"; // Bump version so phone downloads new files
 const FILES = [
   "./", "index.html", "style.css", "formulas.js", "script.js", "tools.js",
-  "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"
+  "manifest.webmanifest", "android-chrome-192x192.png", "android-chrome-512x512.png"
 ];
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 const NETWORK_TIMEOUT = 3500;               // on a bad connection, fall back to the saved copy after 3.5 seconds

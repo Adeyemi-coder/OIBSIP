@@ -12,8 +12,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Verdant">
   <link rel="manifest" href="manifest.webmanifest">
-
-
+  
+  <link rel="icon" href="./android-chrome-192x192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./android-chrome-192x192.png">
+  
   <script>
     (function () {
       var root = document.documentElement;
@@ -47,7 +49,16 @@
   <header class="site-header">
     <p class="wordmark">VERDANT</p>
     <div class="site-header__actions">
-      <button type="button" class="scene-toggle" id="install-btn" hidden>Install app</button>
+      
+      <!-- Install App Button (Icon on mobile, Text on desktop) -->
+      <button type="button" class="scene-toggle" id="install-btn" hidden aria-label="Install App">
+        <svg class="icon-mobile" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span class="text-desktop">Install app</span>
+      </button>
       
       <!-- Sound Button with SVG and Text -->
       <button type="button" class="scene-toggle" id="sound-toggle" aria-pressed="false" aria-label="Toggle Sound">
@@ -59,7 +70,7 @@
         <span class="text-desktop">Sound</span>
       </button>
       
-  
+      <!-- Calm Mode Button -->
       <button type="button" class="scene-toggle" id="scene-toggle" aria-pressed="false" aria-label="Toggle Calm Mode">
         <svg class="icon-mobile" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
@@ -67,7 +78,8 @@
         </svg>
         <span class="text-desktop">Calm mode</span>
       </button>
-            <!-- Add this Theme Toggle Button -->
+      
+      <!-- Theme Toggle Button -->
       <button type="button" class="scene-toggle" id="theme-toggle" aria-label="Toggle Dark Mode" aria-pressed="false">
         <!-- Moon Icon (Shows in Light Mode) -->
         <svg class="icon-moon icon-mobile" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -207,7 +219,7 @@
       </details>
     </aside>
 
-        <section class="concept mobile-collapsible" aria-labelledby="concept-title">
+    <section class="concept mobile-collapsible" aria-labelledby="concept-title">
       <h2 id="concept-title">How it works</h2>
       <p><strong>Calc</strong> evaluates operations in the order you enter them, like a desk calculator: 5 + 3 &times; 2 gives 16. Percent works the way a shop till does: 200 + 10 % gives 220. MC, MR, M+ and M&minus; keep a number in memory. <strong>Sci</strong> follows true order of operations with brackets, powers and square roots: 5 + 3 &times; 2 gives 11.</p>
       <p>Press equals and the full equation sprouts from the ground behind the calculator, then settles into the scene. Older equations grow fainter and drift deeper. Calm mode hides them. The History list holds the same record as text, is kept on this device, and lets you tap a result to reuse it.</p>
