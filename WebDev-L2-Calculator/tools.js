@@ -146,7 +146,7 @@
       }
     },
     {
-      id: "fluids", name: "Maintenance fluids (4-2-1)", label: "Maintenance fluids", formula: "4 + 2 + 1 mL/kg/hr",
+     id: "fluids", name: "Maintenance fluids (4-2-1)", label: "Maintenance fluids", formula: "4 mL/kg/hr (first 10 kg) + 2 mL/kg/hr (next 10 kg) + 1 mL/kg/hr (each kg above 20)",
       note: "Maintenance only. It does not replace deficits or ongoing losses.",
       fields: [numField("kg", "Weight", "kg", "e.g. 20")],
       compute: function (v) {
@@ -189,7 +189,7 @@
       }
     }
   ];
-  // The other 23 calculators live in formulas.js (loaded first). Adding them here puts them in the dropdown too.
+ 
   (window.VERDANT_EXTRA_CALCS || []).forEach(function (c) { CALCS.push(c); });
   const CALC_BY_ID = {};
   CALCS.forEach(function (c) { CALC_BY_ID[c.id] = c; });
