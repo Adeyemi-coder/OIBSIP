@@ -529,3 +529,48 @@ body[data-motion="off"] *, body[data-motion="off"] *::before, body[data-motion="
 .app-main {
   min-height: calc(100vh - 180px); /* Keeps the footer from floating up on empty pages */
 }
+
+/* ---------- Mobile Bottom Navigation ---------- */
+@media (max-width: 760px) {
+  /* Move the nav to the bottom of the screen */
+  .nav-wrapper {
+    position: fixed;
+    top: auto;
+    bottom: 16px; /* Floats 16px from the bottom edge */
+    left: 0;
+    right: 0;
+    padding: 0 12px;
+    z-index: 100;
+  }
+
+  /* Reverse the shadow so it points UP instead of down */
+  .topbar {
+    box-shadow: 0 -10px 30px -8px rgba(0, 0, 0, 0.4);
+    /* Safe area for iPhones with home bars */
+    margin-bottom: env(safe-area-inset-bottom, 0); 
+  }
+
+  /* Make sure the content doesn't hide behind the new bottom nav */
+  .app-main {
+    padding-bottom: 120px; /* Increased from 90px to clear the nav */
+  }
+
+  /* Adjust footer so it sits above the nav */
+  .app-footer {
+    padding-bottom: 100px;
+  }
+
+  /* Keep your existing mobile styles below... */
+  .nav-label { display: none; }
+  .nav-icon { display: block; }
+  .brand-text { display: none; }
+  .board { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 46px 22px; padding: 40px 6px 16px; }
+  .note-title { font-size: 1.4rem; }
+  .form-layout { grid-template-columns: 1fr; }
+  .preview-area { display: none; }
+  .grid-2-col, .report-who { grid-template-columns: 1fr; }
+  .quick-box .kbd { display: none; }
+  .theme-grid { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-grid { grid-template-columns: 1fr 1fr; }
+  .report-layout { grid-template-columns: 1fr; }
+}
