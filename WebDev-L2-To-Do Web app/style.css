@@ -551,12 +551,10 @@ body[data-motion="off"] *, body[data-motion="off"] *::before, body[data-motion="
     margin-bottom: env(safe-area-inset-bottom, 0); 
   }
 
-  /* Hide the brand logo on mobile to make room for the nav */
   .brand {
     display: none; 
   }
 
-  /* Spread nav items evenly */
   .topnav {
     flex: 1;
     margin-left: 0;
@@ -569,12 +567,20 @@ body[data-motion="off"] *, body[data-motion="off"] *::before, body[data-motion="
     height: 44px;
     padding: 0;
     border-radius: 50%;
+    transition: all 0.3s var(--spring);
+  }
+
+  /* THE FIX: Soft, tinted active state instead of a heavy black circle */
+  .topnav a[aria-current="page"] {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+    box-shadow: none;
+    transform: scale(1.08); /* Subtle pop */
   }
 
   .nav-label { display: none; }
   .nav-icon { display: block; width: 20px; height: 20px; }
 
-  /* Ensure the page content doesn't hide behind the bottom nav */
   .app-main {
     padding-bottom: 120px; 
   }
