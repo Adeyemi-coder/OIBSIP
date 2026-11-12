@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "verdant-v5"; // Bump version so phone downloads new files
+const CACHE = "verdant-v6"; // Bump version so phone downloads new files
 const FILES = [
   "./", "index.html", "style.css", "formulas.js", "script.js", "tools.js",
   "manifest.webmanifest", "android-chrome-192x192.png", "android-chrome-512x512.png"

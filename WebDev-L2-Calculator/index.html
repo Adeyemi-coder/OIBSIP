@@ -235,11 +235,28 @@
 
   <footer class="site-footer">
     <p>Designed and built by <a href="https://www.linkedin.com/in/adeyemi-kehinde-rn" target="_blank" rel="noopener noreferrer">ADEYEMI KEHINDE</a></p>
-    <p>Oasis Infobyte Web Development &amp; Designing Internship, Task 1</p>
+    
   </footer>
 
   <div class="toast" id="toast" aria-hidden="true"></div>
-
+    <!-- Physiological Limit Warning Modal -->
+  <dialog id="clinical-warning-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <h2>Physiological Limit Warning</h2>
+      </div>
+      <p id="modal-warning-text">This value is outside normal physiological limits. Please verify the entry.</p>
+      <div class="modal-actions">
+        <button type="button" id="modal-cancel" class="btn">Edit Entry</button>
+        <button type="button" id="modal-confirm" class="btn btn--primary">I am sure, proceed</button>
+      </div>
+    </div>
+  </dialog>
   <noscript><p class="noscript">This calculator needs JavaScript to work. Please enable it and reload.</p></noscript>
 </body>
 </html>

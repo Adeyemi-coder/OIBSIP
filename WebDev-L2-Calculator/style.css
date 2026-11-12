@@ -725,3 +725,74 @@ html.lite .formula { backdrop-filter: none; background: rgba(255,255,255,.8); }
 [data-theme="dark"] .library__list::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3); 
 }
+
+/* =========================================
+   CLINICAL PHYSIOLOGICAL WARNING MODAL
+   ========================================= */
+.clinical-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: none; /* Hidden by default */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.clinical-modal-overlay.is-open {
+  display: flex;
+}
+
+.clinical-modal {
+  border-radius: 16px;
+  padding: 0;
+  background: var(--panel);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.4);
+  border: 1px solid var(--edge);
+  color: var(--ink);
+  max-width: 100%;
+  width: 400px;
+  animation: fade-up 300ms var(--ease-out) both;
+}
+
+.clinical-modal-content {
+  padding: 24px;
+}
+
+.clinical-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: var(--error);
+}
+
+.clinical-modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.clinical-modal p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin-bottom: 24px;
+}
+
+.clinical-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Dark mode support */
+[data-theme="dark"] .clinical-modal {
+  background: rgba(20, 35, 25, 0.95);
+  border-color: rgba(255, 255, 255, 0.15);
+}

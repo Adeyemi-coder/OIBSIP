@@ -135,7 +135,7 @@
     },
     {
       id: "parkland", name: "Parkland burn formula", label: "Parkland", formula: "4 mL × kg × %TBSA",
-      note: "Count from the time of the burn. Use second- and third-degree burns only. Ringer's lactate is usual. Adjust to urine output.",
+      note: "Adult estimate. Count from the time of the burn. Use second- and third-degree burns only. Ringer's lactate is usual. Adjust to urine output. Children need maintenance fluids as well, and many burn units use their own protocol.",
       fields: [numField("kg", "Weight", "kg", "e.g. 70"), numField("pct", "Burn area", "% TBSA", "e.g. 20")],
       compute: function (v) {
         if (v.pct > 100) return { error: "Burn area cannot be above 100 %." };
@@ -146,7 +146,7 @@
       }
     },
     {
-     id: "fluids", name: "Maintenance fluids (4-2-1)", label: "Maintenance fluids", formula: "4 mL/kg/hr (first 10 kg) + 2 mL/kg/hr (next 10 kg) + 1 mL/kg/hr (each kg above 20)",
+      id: "fluids", name: "Maintenance fluids (4-2-1)", label: "Maintenance fluids", formula: "4 mL/kg/hr (first 10 kg) + 2 mL/kg/hr (next 10 kg) + 1 mL/kg/hr (each kg above 20)",
       note: "Maintenance only. It does not replace deficits or ongoing losses.",
       fields: [numField("kg", "Weight", "kg", "e.g. 20")],
       compute: function (v) {
@@ -160,7 +160,7 @@
     },
     {
       id: "uop", name: "Urine output (mL/kg/hr)", label: "Urine output", formula: "mL ÷ (kg × hours)",
-      note: "For adults, about 0.5 mL/kg/hr or more is a common minimum.",
+      note: "For adults, about 0.5 mL/kg/hr or more is a common minimum. Infants and children need higher targets, so follow your unit's values.",
       fields: [numField("ml", "Urine volume", "mL", "e.g. 300"), numField("kg", "Weight", "kg", "e.g. 70"), numField("hrs", "Time", "hours", "e.g. 6")],
       compute: function (v) {
         const r = v.ml / (v.kg * v.hrs), w = checkBody(undefined, v.kg);
@@ -189,7 +189,7 @@
       }
     }
   ];
- 
+  // The other 23 calculators live in formulas.js (loaded first). Adding them here puts them in the dropdown too.
   (window.VERDANT_EXTRA_CALCS || []).forEach(function (c) { CALCS.push(c); });
   const CALC_BY_ID = {};
   CALCS.forEach(function (c) { CALC_BY_ID[c.id] = c; });
@@ -288,10 +288,57 @@
     if (missing.length) console.warn("Verdant: formulas with no Open button:", missing);
   })();
 
+  /* ---------- SANITY LIMITS: what is plausible for each field. A value outside the range asks for confirmation. ---------- */
+  // Returns [min, max, what it is] or null. Matches on the unit, and on the label where one unit is used for several things.
+  function limitFor(f) {
+    const label = f.label.toLowerCase(), unit = f.unit.toLowerCase();
+    switch (unit) {
+      case "kg": return [0.3, 400, "a patient's weight"];
+      case "lb": return [0.7, 900, "a patient's weight"];
+      case "cm": return [30, 250, "a patient's height"];
+      case "in": return label.indexOf("height") >= 0 ? [20, 100, "a patient's height"] : null;
+      case "years": return [0, 120, "an age"];
+      case "bpm": return [20, 300, "a heart rate"];
+      case "breaths/min": return [4, 80, "a respiratory rate"];
+      case "mmhg": return label.indexOf("diastolic") >= 0 ? [20, 200, "a diastolic pressure"] : [40, 300, "a blood pressure"];
+      case "ml":
+        if (label.indexOf("tidal") >= 0) return [20, 2500, "a tidal volume"];
+        if (label.indexOf("stroke") >= 0) return [10, 200, "a stroke volume"];
+        if (label.indexOf("intake") >= 0 || label.indexOf("output") >= 0) return [0, 12000, "a daily fluid total"];
+        return [0.1, 5000, "a volume"];
+      case "ml/hr": return [0.1, 999, "a pump rate"];
+      case "hours": return [0.1, 72, "a time in hours"];
+      case "min": return [1, 1440, "a time in minutes"];
+      case "mg/dl": return label.indexOf("calcium") >= 0 ? [4, 20, "a calcium level"] : [0.1, 20, "a creatinine level"];
+      case "meq/l":
+        if (label.indexOf("sodium") >= 0) return [100, 180, "a sodium level"];
+        if (label.indexOf("chloride") >= 0) return [70, 130, "a chloride level"];
+        return [5, 50, "a bicarbonate level"];
+      case "g/dl": return [1, 6, "an albumin level"];
+      case "% tbsa": return [1, 100, "a burn area"];
+      case "mg/kg": return [0.001, 200, "a dose per kg"];
+      case "mcg/kg/min": return [0.01, 100, "a titration dose"];
+      case "units/hr": return [10, 5000, "a heparin rate"];
+      case "units/day": return [5, 500, "a total daily insulin dose"];
+      case "boxes": return [1, 15, "an ECG interval"];
+      default: return null;
+    }
+  }
+  // Returns { msg, high } for an out-of-range number, or null. Any field over 100000 is flagged even without a specific range.
+  function rangeProblem(f, n) {
+    const lim = limitFor(f);
+    if (lim && (n < lim[0] || n > lim[1])) {
+      return { high: n > lim[1], msg: f.label + " of " + n + " " + f.unit + " is outside the usual range for " + lim[2] + " (" + lim[0] + " to " + lim[1] + " " + f.unit + "). Check the number and the unit." };
+    }
+    if (!lim && n > 100000) return { high: true, msg: f.label + " of " + n + " is unusually large. Check the number and the unit." };
+    return null;
+  }
+
   /* ---------- 5. NURSING TAB ---------- */
   const nr = {};
   let activeCalc = CALCS[0];
-  let nursingOut = null;                       // the current valid result, ready to save
+  let nursingOut = null;
+  nr.flag = ""; nr.flagHigh = false; nr.flagField = ""; nr.confirmedKey = ""; nr.shownKey = ""; nr.timer = null;                       // the current valid result, ready to save
 
   function renderFields() {
     const items = activeCalc.fields.map(function (f, i, all) {
@@ -335,6 +382,7 @@
   function recomputeNursing() {
     const v = {};
     let missing = false, problem = "";
+    nr.flag = ""; nr.flagHigh = false; nr.flagField = "";
     activeCalc.fields.forEach(function (f) {
       const node = document.getElementById("nr-f-" + f.k);
       // A field that is not on screen (for example while the calculator is being switched) counts as "not filled in yet"
@@ -344,6 +392,8 @@
       v[f.k] = null;
       if (n === null) { if (!f.optional) missing = true; return; }
       if (Number.isNaN(n) || n < 0 || (n === 0 && !f.zero) || n > 1e7) { if (!problem) problem = f.label + (f.zero ? " must be a number of 0 or more." : " must be a number above 0."); return; }
+      const bad = rangeProblem(f, n);
+      if (bad && !nr.flag) { nr.flag = bad.msg; nr.flagHigh = bad.high; nr.flagField = f.k; }
       v[f.k] = n;
     });
 
@@ -361,12 +411,13 @@
       } else {
         const valueText = out.text || fmt(out.value, out.dp);       // out.text is for results that are not plain numbers (a date)
         const expression = out.parts.join(" ");
-        paint(nr.ui, { valueText: valueText, unit: out.unit, detail: out.detail, warnings: out.warnings, note: activeCalc.note });
+        const warnings = nr.flag ? ["Check this entry: " + nr.flag].concat(out.warnings) : out.warnings;
+        paint(nr.ui, { valueText: valueText, unit: out.unit, detail: out.detail, warnings: warnings, note: activeCalc.note });
         nursingOut = {
           text: activeCalc.label + ": " + expression + " = " + valueText + " " + out.unit,
           valueText: valueText,
           tokens: out.parts.concat(["=", valueText]),
-          spoken: activeCalc.label + ": " + valueText + " " + out.unit + (out.detail ? ". " + out.detail : "") + (out.warnings.length ? ". Warning: " + out.warnings.join(" ") : "")
+          spoken: activeCalc.label + ": " + valueText + " " + out.unit + (out.detail ? ". " + out.detail : "") + (warnings.length ? ". Warning: " + warnings.join(" ") : "")
         };
       }
     }
@@ -404,19 +455,30 @@
     nr.form.addEventListener("submit", function (event) { event.preventDefault(); });
     nr.ui = makeCard();
     nr.actions = makeActions();
-    const disclaimer = el("p", "tool__disclaimer", "Study aid only. Check results against your facility protocols, and have high-alert medications verified by a second nurse or your pharmacist. Nothing is stored unless you press Save to history.");
+    const disclaimer = el("p", "tool__disclaimer", "Study aid and double-check tool. It is not a medical device and has not been clinically validated. Never give a medication from this result alone: follow the prescriber's order and your facility protocol, and have high-alert medications verified by a second nurse or pharmacist. Do not enter patient names or identifiers. Nothing is stored here unless you press Save to history.");
 
     nr.select.addEventListener("change", function () { selectCalc(nr.select.value); });
-    nr.form.addEventListener("input", recomputeNursing);
-    nr.form.addEventListener("change", function (event) {                  // fires when a field is left: read the result aloud
-      if (!nr.form.contains(event.target)) return;                         // a field that was just replaced by switching calculators
+    nr.form.addEventListener("input", function () {
       recomputeNursing();
-      if (nursingOut) V.speak(nursingOut.spoken);
+      clearTimeout(nr.timer);
+      nr.timer = setTimeout(function () { checkEntry(true); }, 900);   // too-high numbers are caught once typing pauses
+    });
+    nr.form.addEventListener("focusout", function (event) {            // leaving a field catches too-low numbers as well
+      if (!nr.form.contains(event.target)) return;
+      recomputeNursing();
+      checkEntry(false);
+    });
+    nr.form.addEventListener("change", function (event) {              // read the result aloud once the entry is settled
+      if (!nr.form.contains(event.target)) return;
+      recomputeNursing();
+      if (nursingOut && !needsConfirm()) V.speak(nursingOut.spoken);
     });
     nr.actions.save.addEventListener("click", function () {
+      if (needsConfirm()) { openWarning(); return; }
       if (nursingOut) V.record(nursingOut.text, nursingOut.valueText, nursingOut.tokens, nursingOut.spoken);
     });
     nr.actions.use.addEventListener("click", function () {
+      if (needsConfirm()) { openWarning(); return; }
       if (nursingOut) V.useValue(nursingOut.valueText);
     });
 
@@ -446,6 +508,7 @@
     const details = el("details", "library");
     if (!formulas.length) { details.hidden = true; return details; }
     const summary = el("summary", "", "Formula library (" + formulas.length + ")");
+    const version = el("p", "library__empty", "Formulas version " + (window.VERDANT_FORMULAS_VERSION || "unknown") + ". Check them against your course notes and local policy.");
     const search = el("input", "control");
     search.type = "search";
     search.placeholder = "Search formulas";
@@ -481,7 +544,7 @@
       if (button) openFromLibrary(button.dataset.name);
     });
     draw();
-    details.append(summary, search, list, empty);
+    details.append(summary, version, search, list, empty);
     return details;
   }
 
@@ -610,4 +673,78 @@
     fillUnits(CATS[0].id);
     recomputeConvert();
   })();
+  /* ---------- 8. OUT-OF-RANGE WARNING DIALOG ---------- */
+  const warn = {};
+  // The "key" is the calculator plus every typed value, so a confirmation only applies to exactly that entry
+  function currentKey() {
+    return activeCalc.id + "|" + activeCalc.fields.map(function (f) { const node = document.getElementById("nr-f-" + f.k); return node ? node.value.trim() : ""; }).join("|");
+  }
+  function needsConfirm() { return !!nr.flag && nr.confirmedKey !== currentKey(); }
+  function checkEntry(typing) {
+    if (!needsConfirm() || nr.shownKey === currentKey()) return;   // never ask twice about the same entry
+    if (typing && !nr.flagHigh) return;                            // while typing, only react to numbers that are too high
+    openWarning();
+  }
+  function buildWarning() {
+    if (warn.root) return;
+    const css = document.createElement("style");
+    css.textContent = ".limit-modal{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.6)}" +
+      ".limit-modal[hidden]{display:none}.limit-modal__box{width:420px;max-width:100%;padding:24px;border-radius:16px;background:#fff;color:var(--ink,#12372A);border:1px solid var(--edge,#ccc);box-shadow:0 40px 80px rgba(0,0,0,.4);animation:limit-in 240ms ease-out both}" +
+      "[data-theme=dark] .limit-modal__box{background:#14231a}.limit-modal__head{display:flex;align-items:center;gap:12px;margin-bottom:12px;color:var(--error,#9B2C1F)}" +
+      ".limit-modal__head h2{margin:0;font-size:18px;font-weight:600}.limit-modal__text{margin:0 0 20px;font-size:15px;line-height:1.6}" +
+      ".limit-modal__actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap}@keyframes limit-in{from{opacity:0;transform:translateY(8px)}}" +
+      "@media (prefers-reduced-motion:reduce){.limit-modal__box{animation:none}}";
+    document.head.append(css);
+    const root = el("div", "limit-modal");
+    root.hidden = true;
+    const box = el("div", "limit-modal__box");
+    box.setAttribute("role", "alertdialog");
+    box.setAttribute("aria-modal", "true");
+    box.setAttribute("aria-labelledby", "limit-title");
+    box.setAttribute("aria-describedby", "limit-text");
+    const head = el("div", "limit-modal__head");
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("viewBox", "0 0 24 24"); icon.setAttribute("width", "24"); icon.setAttribute("height", "24"); icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
+    const title = el("h2", "", "Check this number");
+    title.id = "limit-title";
+    head.append(icon, title);
+    warn.text = el("p", "limit-modal__text");
+    warn.text.id = "limit-text";
+    const actions = el("div", "limit-modal__actions");
+    warn.edit = el("button", "btn", "Edit entry");
+    warn.edit.type = "button";
+    warn.ok = el("button", "btn btn--primary", "I am sure, proceed");
+    warn.ok.type = "button";
+    actions.append(warn.edit, warn.ok);
+    box.append(head, warn.text, actions);
+    root.append(box);
+    document.body.append(root);
+    warn.root = root;
+    warn.edit.addEventListener("click", function () { closeWarning(false); });
+    warn.ok.addEventListener("click", function () { closeWarning(true); });
+    root.addEventListener("keydown", function (event) {
+      event.stopPropagation();
+      if (event.key === "Escape") { event.preventDefault(); closeWarning(false); }
+      if (event.key === "Tab") {                                   // keep keyboard focus inside the dialog
+        event.preventDefault();
+        (document.activeElement === warn.edit ? warn.ok : warn.edit).focus();
+      }
+    });
+  }
+  function openWarning() {
+    if (!nr.flag) return;
+    buildWarning();
+    if (!warn.root.hidden) return;
+    nr.shownKey = currentKey();
+    warn.text.textContent = nr.flag;
+    warn.root.hidden = false;
+    warn.edit.focus();                                             // the safe choice is the default
+  }
+  function closeWarning(confirmed) {
+    warn.root.hidden = true;
+    if (confirmed) { nr.confirmedKey = currentKey(); recomputeNursing(); return; }
+    const target = document.getElementById("nr-f-" + nr.flagField);
+    if (target) { target.focus(); if (target.select) target.select(); }
+  }
 })();
