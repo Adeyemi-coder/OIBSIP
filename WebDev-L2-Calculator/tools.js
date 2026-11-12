@@ -455,7 +455,7 @@
     nr.form.addEventListener("submit", function (event) { event.preventDefault(); });
     nr.ui = makeCard();
     nr.actions = makeActions();
-    const disclaimer = el("p", "tool__disclaimer", "Study aid and double-check tool. It is not a medical device and has not been clinically validated. Never give a medication from this result alone: follow the prescriber's order and your facility protocol, and have high-alert medications verified by a second nurse or pharmacist. Do not enter patient names or identifiers. Nothing is stored here unless you press Save to history.");
+    const disclaimer = el("p", "tool__disclaimer", "Designed to assist healthcare professionals with calculations and references. This does not replace clinical judgment or the prescriber's order. Always verify high-alert medications with a second clinician and follow your facility protocols. No patient identifiers are stored; history remains local to this device unless saved.");
 
     nr.select.addEventListener("change", function () { selectCalc(nr.select.value); });
     nr.form.addEventListener("input", function () {
@@ -675,7 +675,7 @@
   })();
   /* ---------- 8. OUT-OF-RANGE WARNING DIALOG ---------- */
   const warn = {};
-  // The "key" is the calculator plus every typed value, so a confirmation only applies to exactly that entry
+  
   function currentKey() {
     return activeCalc.id + "|" + activeCalc.fields.map(function (f) { const node = document.getElementById("nr-f-" + f.k); return node ? node.value.trim() : ""; }).join("|");
   }
