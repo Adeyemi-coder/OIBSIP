@@ -1,6 +1,5 @@
-/* ============================================================
-   TaskPulse — style.css
-   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Patrick+Hand&family=Quicksand:wght@400;500;600;700;800&display=swap');
+
 
 :root {
   --font-ui: "Quicksand", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
