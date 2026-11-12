@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaskPulse — Daily Canvas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Patrick+Hand&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="canvas" data-motion="auto">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ================= Top bar ================= -->
+  <div class="nav-wrapper">
+    <header class="topbar">
+      <a class="brand" href="#board" aria-label="TaskPulse — board"><span class="brand-mark" aria-hidden="true"></span><span class="brand-text">TaskPulse</span></a>
+      <nav class="topnav" aria-label="Primary">
+        <a href="#board" data-view-link="board" aria-label="Board">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span class="nav-label">Board</span><span class="nav-count" id="nav-stat-count" title="STAT tasks still open"></span>
+        </a>
+        <a href="#new" data-view-link="new" aria-label="New task">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>
+          <span class="nav-label">New task</span>
+        </a>
+        <a href="#report" data-view-link="report" aria-label="Handover report">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+          <span class="nav-label">Handover</span>
+        </a>
+      </nav>
+      <button type="button" class="icon-btn" id="settings-btn" aria-label="Settings" title="Settings (?)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </header>
+  </div>
+
+  <main class="app-main" id="main" tabindex="-1">
+
+    <!-- ================= BOARD ================= -->
+    <section class="view" data-view="board" aria-labelledby="board-title">
+      <div class="view-head">
+        <p class="view-greeting" id="greeting-hello">Hello</p>
+        <h1 id="board-title" class="view-title">What are we going to do today?</h1>
+        <div class="date-nav" role="group" aria-label="Choose day">
+          <button type="button" class="icon-btn" id="date-prev" aria-label="Previous day" title="Previous day ([)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <label class="date-label"><span id="date-text">Today</span><input type="date" id="date-input" aria-label="Jump to date"></label>
+          <button type="button" class="icon-btn" id="date-next" aria-label="Next day" title="Next day (])">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <button type="button" class="today-btn" id="date-today" hidden>Today</button>
+        </div>
+      </div>
+
+      <form id="quick-form" class="quick-add" autocomplete="off">
+        <div class="quick-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <label class="visually-hidden" for="quick-input">Quick add a task</label>
+          <input id="quick-input" type="text" maxlength="160" placeholder="Pin something…  Check Bed 4 vitals @14:00 !stat #clinical">
+          <kbd class="kbd" aria-hidden="true">/</kbd>
+          <button type="submit" class="btn btn-primary btn-sm" id="quick-submit" disabled>Pin it</button>
+        </div>
+        <div class="quick-chips" id="quick-chips" aria-live="polite"></div>
+      </form>
+
+      <div class="nowbar" id="nowbar" hidden></div>
+      <div class="carry-banner" id="carry-banner" hidden>
+        <span id="carry-text"></span>
+        <button type="button" class="btn btn-primary btn-sm" id="carry-btn">Bring to today</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="chips" id="filter-chips" role="group" aria-label="Filter by category"></div>
+        <div class="seg" id="status-seg" role="group" aria-label="Filter by status">
+          <button type="button" data-status="all" aria-pressed="true">All</button>
+          <button type="button" data-status="open" aria-pressed="false">Open</button>
+          <button type="button" data-status="done" aria-pressed="false">Done</button>
+        </div>
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <span class="visually-hidden">Search notes</span>
+          <input type="search" id="search-input" placeholder="Search notes" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="board" id="board" aria-label="Pinned notes"></div>
+
+      <div id="empty-state" class="canvas-empty" hidden>
+        <h2 id="empty-title">Nothing pinned yet</h2>
+        <p id="empty-sub">Type in the bar above and press Enter — a hand will pin your first note.</p>
+        <button type="button" class="btn btn-glass" id="empty-clear" hidden>Clear filters</button>
+      </div>
+    </section>
+
+    <!-- ================= NEW TASK ================= -->
+    <section class="view" data-view="new" hidden aria-labelledby="new-title">
+      <div class="view-head">
+        <h1 id="new-title" class="view-title">New sticky note</h1>
+        <p class="view-sub">Only the title is required. Tip: the quick-add bar on the board is faster.</p>
+      </div>
+      <div class="form-layout">
+        <form id="task-form" class="task-form card" novalidate>
+          <div class="fields" id="new-fields"></div>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Pin to board</button>
+          </div>
+        </form>
+        <div class="preview-area">
+          <span class="preview-label">Live preview</span>
+          <div id="preview-slot"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HANDOVER REPORT ================= -->
+    <section class="view" data-view="report" hidden aria-labelledby="report-title">
+      <div class="view-head">
+        <h1 id="report-title" class="view-title">Shift handover</h1>
+        <p class="view-sub" id="report-sub">Numbers for the day, plus a plain-text handover you can copy.</p>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="dash-card">
+          <div class="dash-header"><span class="dash-label">Pending</span><span class="dash-num" id="stat-pending">0</span></div>
+          <div class="progress-track"><div class="progress-fill fill-pending" id="bar-pending" style="width:0%"></div></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-header"><span class="dash-label">Completed</span><span class="dash-num" id="stat-done">0</span></div>
+          <div class="progress-track"><div class="progress-fill fill-done" id="bar-done" style="width:0%"></div></div>
+        </div>
+        <div class="dash-card is-stat">
+          <div class="dash-header"><span class="dash-label">STAT open</span><span class="dash-num" id="stat-stat">0</span></div>
+          <p class="dash-sub">Needs action first.</p>
+        </div>
+        <div class="dash-card">
+          <div class="dash-header"><span class="dash-label">Carried over</span><span class="dash-num" id="stat-carried">0</span></div>
+          <p class="dash-sub">Open from earlier days.</p>
+        </div>
+      </div>
+
+      <div class="report-layout">
+        <div>
+          <div class="report-who">
+            <label class="field"><span class="field-label">Handed over by</span><input type="text" id="report-name" maxlength="40" placeholder="Your name" autocomplete="name"></label>
+            <label class="field"><span class="field-label">Shift</span>
+              <select id="report-shift"><option value="">Not stated</option><option>Morning</option><option>Day</option><option>Evening</option><option>Night</option></select>
+            </label>
+          </div>
+          <pre class="report-preview" id="report-preview" aria-label="Handover report preview" tabindex="0"></pre>
+          <div class="report-actions">
+            <button type="button" id="copy-report" class="btn btn-primary">Copy report</button>
+            <button type="button" id="download-report" class="btn btn-glass">Download .txt</button>
+            <button type="button" id="print-report" class="btn btn-glass">Print</button>
+          </div>
+        </div>
+        <section class="card legend-card" aria-labelledby="legend-title">
+          <h2 id="legend-title" class="card-title">Colour key</h2>
+          <ul class="legend" id="legend"></ul>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= Edit / detail dialog ================= -->
+  <dialog class="dialog" id="note-dialog" aria-labelledby="note-dialog-title">
+    <form id="note-form" novalidate>
+      <div class="dialog-head">
+        <h2 id="note-dialog-title">Edit note</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="dialog-body">
+        <div class="fields" id="note-fields"></div>
+        <p class="meta-line" id="note-meta"></p>
+        <p class="form-error" id="note-error" role="alert" hidden></p>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" class="btn btn-danger btn-sm" id="note-delete">Unpin &amp; remove</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ================= Settings dialog ================= -->
+  <dialog class="dialog" id="settings-dialog" aria-labelledby="settings-title">
+    <div class="dialog-head">
+      <h2 id="settings-title">Settings</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Close settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body settings-form">
+      <section class="settings-section">
+        <h3>Theme</h3>
+        <div class="theme-grid" id="theme-grid" role="radiogroup" aria-label="Colour theme"></div>
+      </section>
+      <section class="settings-section">
+        <h3>Animation</h3>
+        <div class="seg" id="motion-seg" role="radiogroup" aria-label="Animation">
+          <button type="button" role="radio" data-motion="auto" aria-checked="true" aria-pressed="true">Follow my device</button>
+          <button type="button" role="radio" data-motion="full" aria-checked="false" aria-pressed="false">Always</button>
+          <button type="button" role="radio" data-motion="off" aria-checked="false" aria-pressed="false">Off</button>
+        </div>
+      </section>
+      <section class="settings-section">
+        <h3>Handover</h3>
+        <label class="field"><span class="field-label">Your name (used on reports)</span><input type="text" id="set-name" maxlength="40" autocomplete="name"></label>
+        <label class="switch-row">
+          <span>Remind me before timed tasks<small>10 minutes before (15 for STAT) while TaskPulse is open.</small></span>
+          <input type="checkbox" id="set-reminders">
+        </label>
+      </section>
+      <section class="settings-section">
+        <h3>Your data</h3>
+        <p class="meta-line">Everything is stored in this browser only. Back it up now and then.</p>
+        <div class="data-actions">
+          <button type="button" class="btn btn-glass btn-sm" id="export-btn">Export backup</button>
+          <label class="btn btn-glass btn-sm" for="import-input" style="cursor:pointer">Import backup</label>
+          <input type="file" id="import-input" accept="application/json,.json" class="visually-hidden">
+          <button type="button" class="btn btn-danger btn-sm" id="clear-btn">Delete everything</button>
+        </div>
+      </section>
+      <section class="settings-section">
+        <h3>Keyboard shortcuts</h3>
+        <dl class="shortcuts">
+          <dt><kbd class="kbd">/</kbd></dt><dd>Quick add</dd>
+          <dt><kbd class="kbd">n</kbd></dt><dd>New task form</dd>
+          <dt><kbd class="kbd">b</kbd> <kbd class="kbd">r</kbd></dt><dd>Board · Handover report</dd>
+          <dt><kbd class="kbd">[</kbd> <kbd class="kbd">]</kbd> <kbd class="kbd">t</kbd></dt><dd>Previous day · next day · today</dd>
+          <dt><kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">Z</kbd></dt><dd>Undo last removal</dd>
+          <dt><kbd class="kbd">?</kbd></dt><dd>This panel</dd>
+        </dl>
+      </section>
+    </div>
+    <div class="dialog-foot"><span class="spacer"></span><button type="button" class="btn btn-primary btn-sm" data-close>Done</button></div>
+  </dialog>
+
+  <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+  <div class="hand-layer" id="hand-layer" aria-hidden="true"></div>
+  <footer class="app-footer">
+    <p>Built by <a href="https://www.linkedin.com/in/adeyemi-kehinde-rn
+
+" target="_blank" rel="noopener noreferrer">Adeyemi Kehinde</a></p>
+  </footer>
+  <script src="store.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
