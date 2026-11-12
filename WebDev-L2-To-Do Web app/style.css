@@ -563,19 +563,21 @@ body[data-motion="off"] *, body[data-motion="off"] *::before, body[data-motion="
   }
 
   .topnav a {
-    width: 44px;
-    height: 44px;
+    display: grid;       /* Grid guarantees perfect centering */
+    place-items: center;
+    width: 48px;         /* Slightly wider */
+    height: 42px;        /* Slightly shorter */
     padding: 0;
-    border-radius: 50%;
-    transition: all 0.3s var(--spring);
+    border-radius: 12px; /* Squircle shape, won't turn into an oval */
+    transition: all 0.25s var(--spring);
   }
 
-  /* THE FIX: Soft, tinted active state instead of a heavy black circle */
+  /* THE FIX: Clean squircle active state with no transform */
   .topnav a[aria-current="page"] {
     background: color-mix(in srgb, var(--accent) 15%, transparent);
     color: var(--accent);
     box-shadow: none;
-    transform: scale(1.08); /* Subtle pop */
+    transform: none; /* Removed the scale so it won't distort */
   }
 
   .nav-label { display: none; }
