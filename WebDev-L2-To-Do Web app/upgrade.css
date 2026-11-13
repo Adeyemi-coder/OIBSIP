@@ -1,0 +1,45 @@
+/* TaskPulse - upgrade.css (load after style.css) */
+
+/* Filters dropdown */
+.toolbar[hidden], .fchip[hidden], #legend li[hidden] { display: none !important; }
+.filter-bar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin: 0.25rem 0 0.75rem; }
+.filter-toggle { display: inline-flex; align-items: center; gap: 0.5rem; }
+.filter-toggle svg { width: 16px; height: 16px; flex: none; }
+.filter-toggle .chev { transition: transform 0.2s ease; }
+.filter-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.filter-count {
+  min-width: 1.4rem; padding: 0 0.4rem; border-radius: 999px; text-align: center;
+  font-size: 0.75rem; font-weight: 700; line-height: 1.4rem;
+  background: var(--accent, #be185d); color: #fff;
+}
+.filter-count[hidden], .link-btn[hidden] { display: none; }
+.link-btn { background: none; border: 0; padding: 0; font: inherit; font-size: 0.85rem; color: inherit; text-decoration: underline; cursor: pointer; opacity: 0.75; }
+.link-btn:hover { opacity: 1; }
+
+/* Quick-add hint: only while typing in the bar */
+.quick-chips .hint { display: none; }
+.quick-add:focus-within .quick-chips .hint { display: block; }
+
+/* Everyday mode: no shift picker */
+body[data-mode="general"] .report-who .field:nth-child(2) { display: none; }
+
+/* Note preview */
+.pv-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.pv-title { margin: 0 0 0.5rem; font-size: 1.35rem; line-height: 1.25; overflow-wrap: anywhere; }
+.pv-title.done { text-decoration: line-through; opacity: 0.7; }
+.pv-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; margin: 0.5rem 0 1rem; }
+.pv-grid dt { opacity: 0.65; font-size: 0.85rem; }
+.pv-grid dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.pv-label { margin: 0.9rem 0 0.35rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.65; }
+.pv-notes { margin: 0; padding: 0.7rem 0.9rem; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; background: color-mix(in srgb, currentColor 8%, transparent); }
+
+/* First-run mode chooser */
+.mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem; }
+.mode-card {
+  text-align: left; padding: 1rem; border-radius: 16px; font: inherit; color: inherit; cursor: pointer;
+  background: transparent; border: 2px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+.mode-card:hover, .mode-card:focus-visible { border-color: var(--accent, #be185d); }
+.mode-card b { display: block; font-size: 1.05rem; margin-bottom: 0.25rem; }
+.mode-card small { opacity: 0.75; line-height: 1.4; }
+@media (max-width: 520px) { .mode-cards { grid-template-columns: 1fr; } }

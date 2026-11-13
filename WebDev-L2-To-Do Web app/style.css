@@ -502,6 +502,7 @@ body[data-motion="off"] *, body[data-motion="off"] *::before, body[data-motion="
   .report-preview { max-height: none; overflow: visible; border: 0; background: #fff; color: #000; padding: 0; font-size: 11pt; }
   .app-main { padding: 0; }
 }
+
 /* ========================================== */
 /* FOOTER                                      */
 /* ========================================== */
