@@ -77,6 +77,15 @@
   new MutationObserver(syncThemeColor).observe(document.body, { attributes: true, attributeFilter: ["data-theme"] });
   syncThemeColor();
 
+  /* ---------- Tab icon: add it if index.html doesn't already have one ---------- */
+  if (!document.querySelector('link[rel~="icon"]')) {
+    const icon = document.createElement("link");
+    icon.rel = "icon";
+    icon.type = "image/png";
+    icon.href = "icons/favicon-48.png";
+    document.head.append(icon);
+  }
+
   /* ---------- Local-first data should survive low-storage clean-ups ---------- */
   navigator.storage?.persist?.().catch(() => {});
 

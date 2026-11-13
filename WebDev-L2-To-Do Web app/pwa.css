@@ -1,0 +1,14 @@
+/* TaskPulse - pwa.css */
+html { -webkit-text-size-adjust: 100%; }
+button, a { -webkit-tap-highlight-color: transparent; }
+body { padding-bottom: env(safe-area-inset-bottom, 0); }
+
+.install-btn { display: inline-flex; align-items: center; gap: 0.4rem; }
+.install-btn svg { width: 16px; height: 16px; flex: none; }
+.install-btn[hidden] { display: none; }
+@media (max-width: 560px) { .topbar .install-btn span { display: none; } .topbar .install-btn { padding-inline: 0.6rem; } }
+
+/* Feels more native once installed */
+@media (display-mode: standalone) {
+  .app-footer { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0)); }
+}
