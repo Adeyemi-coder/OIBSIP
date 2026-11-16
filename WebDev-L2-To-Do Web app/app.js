@@ -561,6 +561,17 @@ function goToDate(key) {
 }
 
 /* ============================================================
+   LIVE CLOCK
+   ============================================================ */
+function updateClock() {
+  const clockEl = $("clock-text");
+  if (!clockEl) return;
+  const now = new Date();
+  // Formats as HH:MM AM/PM or 24H based on locale
+  clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+/* ============================================================
    THE HAND — Layered SVG (Restored for guaranteed reliability)
    ============================================================ */
 const HAND_PINCH = { x: 121, y: 80 };
@@ -637,7 +648,6 @@ function createHand({ pinColor, holding = false, open = false }) {
   const scale = handScale();
   const root = el("div", "hand");
   
-  // Restored: Layered SVG injection
   root.dataset.skin = settings.skin || "tone2";
   root.style.setProperty("--pin", pinColor || "#3b82f6");
   root.style.width = `${260 * scale}px`;
@@ -658,7 +668,6 @@ function createHand({ pinColor, holding = false, open = false }) {
   const api = {
     root,
     place(x, y) {
-      // Lock body scroll to prevent coordinate drift
       document.body.classList.add("is-hand-busy");
       
       root.style.left = `${x - HAND_PINCH.x * scale}px`;
@@ -692,7 +701,6 @@ function createHand({ pinColor, holding = false, open = false }) {
     },
     remove() { 
       root.remove(); 
-      // Unlock body scroll
       document.body.classList.remove("is-hand-busy");
     },
   };
@@ -1272,6 +1280,11 @@ function boot() {
   initReport();
   initKeyboard();
   initRouter();
+
+  
+  updateClock();
+  
+  setInterval(updateClock, 1000);
 
   store.onChange((e) => {
     if (e.type === "external") renderAll();

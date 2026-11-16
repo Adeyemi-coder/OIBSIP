@@ -4,22 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TaskPulse — Daily Canvas</title>
+  
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Patrick+Hand&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Core Styles -->
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="upgrade.css">
   <link rel="stylesheet" href="extras.css">
+  <link rel="stylesheet" href="pwa.css">
+  
+  <!-- PWA Meta -->
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="TaskPulse">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="stylesheet" href="pwa.css">
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Patrick+Hand&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="TaskPulse">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 </head>
 <body data-theme="canvas" data-motion="auto">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -27,7 +31,11 @@
   <!-- ================= Top bar ================= -->
   <div class="nav-wrapper">
     <header class="topbar">
-      <a class="brand" href="#board" aria-label="TaskPulse — board"><span class="brand-mark" aria-hidden="true"></span><span class="brand-text">TaskPulse</span></a>
+      <a class="brand" href="#board" aria-label="TaskPulse — board">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text">TaskPulse</span>
+      </a>
+      
       <nav class="topnav" aria-label="Primary">
         <a href="#board" data-view-link="board" aria-label="Board">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -42,6 +50,7 @@
           <span class="nav-label">Handover</span>
         </a>
       </nav>
+      
       <button type="button" class="icon-btn" id="settings-btn" aria-label="Settings" title="Settings (?)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
@@ -55,15 +64,25 @@
       <div class="view-head">
         <p class="view-greeting" id="greeting-hello">Hello</p>
         <h1 id="board-title" class="view-title">What are we going to do today?</h1>
-        <div class="date-nav" role="group" aria-label="Choose day">
-          <button type="button" class="icon-btn" id="date-prev" aria-label="Previous day" title="Previous day ([)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <label class="date-label"><span id="date-text">Today</span><input type="date" id="date-input" aria-label="Jump to date"></label>
-          <button type="button" class="icon-btn" id="date-next" aria-label="Next day" title="Next day (])">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-          <button type="button" class="today-btn" id="date-today" hidden>Today</button>
+        
+        <!-- NEW: Header Actions (Clock + Date) -->
+         <div class="live-clock header-btn" id="live-clock" title="Current time">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="clock-text">--:--</span>
+          </div>
+          <div class="date-nav" role="group" aria-label="Choose day">
+            <button type="button" class="icon-btn" id="date-prev" aria-label="Previous day" title="Previous day ([)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <label class="date-label"><span id="date-text">Today</span><input type="date" id="date-input" aria-label="Jump to date"></label>
+            <button type="button" class="icon-btn" id="date-next" aria-label="Next day" title="Next day (])">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <button type="button" class="today-btn" id="date-today" hidden>Today</button>
+          </div>
         </div>
       </div>
 
@@ -256,11 +275,12 @@
 
   <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
   <div class="hand-layer" id="hand-layer" aria-hidden="true"></div>
+  
+  <!-- Footer with Fixed URL -->
   <footer class="app-footer">
-    <p>Built by <a href="https://www.linkedin.com/in/adeyemi-kehinde-rn
-
-" target="_blank" rel="noopener noreferrer">Adeyemi Kehinde</a></p>
+    <p>Built by <a href="https://www.linkedin.com/in/adeyemi-kehinde-rn" target="_blank" rel="noopener noreferrer">Adeyemi Kehinde</a></p>
   </footer>
+  
   <script src="store.js"></script>
   <script src="app.js"></script>
   <script src="upgrade.js"></script>

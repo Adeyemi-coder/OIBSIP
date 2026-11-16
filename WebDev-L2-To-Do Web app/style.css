@@ -602,3 +602,42 @@ body[data-motion="off"] *, body[data-motion="off"] *::before, body[data-motion="
   .dashboard-grid { grid-template-columns: 1fr 1fr; }
   .report-layout { grid-template-columns: 1fr; }
 }
+/* ---------- Refined Live Clock ---------- */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px; /* Matches the date-nav margin */
+}
+
+.live-clock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* Adds breathing room between the icon and the time */
+  height: 40px; /* Matches the height of the date-nav */
+  padding: 0 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 99px; /* Matches the pill shape */
+  font: 700 0.95rem var(--font-mono); /* Monospace so the time doesn't jitter */
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  user-select: none;
+  transition: border-color 0.2s;
+}
+
+.live-clock svg {
+  color: var(--accent); /* Makes the icon pop */
+}
+
+/* On mobile, we hide the clock to save space, but we ensure the date nav is centered */
+@media (max-width: 760px) {
+  .live-clock {
+    display: none;
+  }
+  .header-actions {
+    justify-content: center;
+    width: 100%;
+  }
+}
