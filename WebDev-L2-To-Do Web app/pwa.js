@@ -1,7 +1,4 @@
-/**
- * TaskPulse - pwa.js  (load LAST, after extras.js)
- * Offline support, install button, update prompt, theme-colour sync.
- */
+
 (() => {
   "use strict";
 
