@@ -1,4 +1,5 @@
 {
+  "id": "/index.html",
   "name": "TaskPulse",
   "short_name": "TaskPulse",
   "description": "A daily planner that turns your day into a heartbeat. Works offline.",
@@ -31,14 +32,14 @@
   "screenshots": [
     {
       "src": "icons/screenshot-wide.png",
-      "sizes": "1280x720",
+      "sizes": "1366x633",
       "type": "image/png",
       "form_factor": "wide",
       "label": "TaskPulse on Desktop"
     },
     {
       "src": "icons/screenshot-narrow.png",
-      "sizes": "720x1280",
+      "sizes": "248x513",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "TaskPulse on Mobile"
