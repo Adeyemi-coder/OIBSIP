@@ -1,6 +1,6 @@
 /* TaskPulse service worker: offline app shell.
    Bump VERSION whenever you change any app file so everyone gets the update. */
-const VERSION = "v5";
+const VERSION = "v7";
 const SHELL = `taskpulse-shell-${VERSION}`;
 const FONTS = "taskpulse-fonts";
 
