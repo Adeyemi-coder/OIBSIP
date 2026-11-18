@@ -57,16 +57,19 @@
     return list;
   }
 
-  function getLimits(unit) {
+   function getLimits(unit) {
     if (!unit) return [0, Infinity];
     const u = unit.toLowerCase();
-    if (u === "kg") return [0.5, 500]; 
-    if (u === "cm" || u === "in") return [20, 250]; 
-    if (u === "bpm" || u === "breaths/min") return [20, 300]; 
-    if (u === "mmhg") return [20, 300]; 
-    if (u === "years") return [0, 120]; 
-    if (u === "°c" || u === "°f") return [20, 45]; 
-    if (u === "ml") return [0, 5000]; 
+    if (u === "kg") return [0.5, 500];
+    if (u === "cm") return [20, 250];
+    if (u === "in") return [20, 100];
+    if (u === "bpm") return [20, 300];
+    if (u === "breaths/min") return [4, 80];
+    if (u === "mmhg") return [20, 300];
+    if (u === "years") return [0, 120];
+    if (u === "°c") return [20, 45];
+    if (u === "°f") return [68, 113];
+    if (u === "ml") return [0, 5000];
     return [0, Infinity];
   }
 
@@ -373,17 +376,16 @@
     stIn.setAttribute("aria-label", "Strength on hand, in " + base + per);
   }
 
-  // Reads the strengths listed in a drug's "Comes as" text, e.g. "Inj: 50mg/mL, 100mg/mL" or "Tab: 250mg, 500mg".
-  // Liquids use the per-mL entries, tablets use the entries without "/mL". Returns values in the dose unit.
   function listedStrengths(formulation, unit, tablets) {
     const out = [];
-    const re = /(\d+(?:\.\d+)?)\s*(mg|mcg|g|IU|MU|mEq|units?)\b(\s*\/\s*\d*\s*mL)?/gi;
+    const re = /(\d+(?:\.\d+)?)\s*(mg|mcg|g|IU|MU|mEq|units?)\b(\s*\/\s*(\d+(?:\.\d+)?)?\s*mL)?/gi;
     let m;
     const text = String(formulation || "").replace(/(\d),(\d{3})/g, "$1$2");
     while ((m = re.exec(text)) !== null) {
       const perMl = !!m[3];
       if (perMl === tablets) continue;
       let val = Number(m[1]);
+      if (perMl && m[4]) val = val / Number(m[4]);        // "125 mg/5 mL" is 25 mg per mL
       const from = canonUnit(m[2]);
       if (from !== unit) {
         const conv = massTo(val, from, unit);
