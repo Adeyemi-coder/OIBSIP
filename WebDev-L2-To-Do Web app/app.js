@@ -264,10 +264,10 @@ function checkFormValues(v) {
   return "";
 }
 
-const state = { view: "board", viewDate: toDateKey(), category: "all", status: "all", query: "" };
-const noteEls = new Map();      
-const busy = new Set();         
-const pendingPin = new Set();   
+const state = { view: "board", viewDate: toDateKey(), category: "all", status: "all", query: "", freeform: false };
+const noteEls = new Map();
+const busy = new Set();
+const pendingPin = new Set();
 let lastDeleted = null;
 let lastToday = toDateKey();
 
@@ -446,6 +446,9 @@ function renderBoard() {
         : `Nothing is planned for ${dayLabel(state.viewDate, { long: true })}. Type above to add something.`;
     $("empty-clear").hidden = !(dayTasks.length && filtering);
   }
+
+  // ADDITIVE: tell the drag layer to re-adopt new notes
+  document.dispatchEvent(new CustomEvent("taskpulse:rendered"));
 }
 
 const chipDefs = [
@@ -553,6 +556,10 @@ function renderAll() {
   renderCarry();
   renderNavBadge();
   renderReport();
+  // ADDITIVE: let drag layer re-apply saved positions after a full render
+  if (window.taskpulseDrag?.applyAll) {
+    try { window.taskpulseDrag.applyAll(); } catch { /* ignore */ }
+  }
 }
 
 function goToDate(key) {
@@ -567,7 +574,6 @@ function updateClock() {
   const clockEl = $("clock-text");
   if (!clockEl) return;
   const now = new Date();
-  // Formats as HH:MM AM/PM or 24H based on locale
   clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -647,14 +653,14 @@ const handT = (x, y, r = 0, s = 1) => `translate(${x}px, ${y}px) rotate(${r}deg)
 function createHand({ pinColor, holding = false, open = false }) {
   const scale = handScale();
   const root = el("div", "hand");
-  
+
   root.dataset.skin = settings.skin || "tone2";
   root.style.setProperty("--pin", pinColor || "#3b82f6");
   root.style.width = `${260 * scale}px`;
   root.style.height = `${420 * scale}px`;
   root.style.transformOrigin = `${HAND_PINCH.x * scale}px ${HAND_PINCH.y * scale}px`;
   root.innerHTML = handSVG(++handSerial);
-  
+
   root.classList.toggle("is-holding", holding);
   root.classList.toggle("is-open", open);
 
@@ -669,7 +675,7 @@ function createHand({ pinColor, holding = false, open = false }) {
     root,
     place(x, y) {
       document.body.classList.add("is-hand-busy");
-      
+
       root.style.left = `${x - HAND_PINCH.x * scale}px`;
       root.style.top = `${y - HAND_PINCH.y * scale}px`;
       awayX = 150 * scale;
@@ -699,8 +705,8 @@ function createHand({ pinColor, holding = false, open = false }) {
         { transform: away(), offset: 1 },
       ], { duration: 720, easing: "cubic-bezier(0.4, 0, 0.9, 0.5)" });
     },
-    remove() { 
-      root.remove(); 
+    remove() {
+      root.remove();
       document.body.classList.remove("is-hand-busy");
     },
   };
@@ -777,10 +783,10 @@ async function unpinOut(id) {
     hand.place(target.x, target.y - 1);
 
     await hand.moveIn();
-    hand.setOpen(false);               
+    hand.setOpen(false);
     await wait(240);
-    note.classList.add("pin-out");     
-    hand.setHolding(true);             
+    note.classList.add("pin-out");
+    hand.setHolding(true);
     const rect = note.getBoundingClientRect();
     const tilt = getComputedStyle(note).getPropertyValue("--tilt").trim() || "0deg";
     note.style.transformOrigin = "50% 10px";
@@ -821,6 +827,8 @@ function pinNewTask(fields, { jump = false } = {}) {
 function finalizeDelete(id) {
   const removed = store.deleteTask(id);
   if (!removed) { renderAll(); return; }
+  // ADDITIVE: forget any free-form position for this id
+  try { window.taskpulseDrag?.remove?.(id); } catch { /* ignore */ }
   lastDeleted = { task: removed, at: Date.now() };
   renderAll();
   toast(`Removed “${truncate(removed.title, 40)}”`, { actionLabel: "Undo", timeout: 8000, onAction: () => undoDelete(removed) });
@@ -868,6 +876,11 @@ function initBoardEvents() {
     if (!note) return;
     const id = note.dataset.id;
     if (busy.has(id) || deleting.has(id)) return;
+    // ADDITIVE: if a drag just happened, ignore the follow-up click
+    if (note.dataset.dragged === "1") {
+      delete note.dataset.dragged;
+      return;
+    }
     const btn = e.target.closest("[data-action]");
     if (!btn) { openEditor(id); return; }
     const action = btn.dataset.action;
@@ -1096,6 +1109,18 @@ function initSettings() {
     }
   });
 
+  // ADDITIVE: focus-sound toggle (only wired if the checkbox exists in your HTML)
+  const soundOn = $("set-sound");
+  if (soundOn) {
+    let savedSound = {};
+    try { savedSound = JSON.parse(localStorage.getItem("taskpulse:sound:v1") || "{}") || {}; } catch { /* ignore */ }
+    soundOn.checked = Boolean(savedSound.preset && savedSound.preset !== "off");
+    soundOn.addEventListener("change", () => {
+      if (!window.taskpulseSound) return;
+      window.taskpulseSound.play(soundOn.checked ? (savedSound.preset && savedSound.preset !== "off" ? savedSound.preset : "rain") : "off");
+    });
+  }
+
   $("export-btn").addEventListener("click", () => {
     download(`taskpulse-backup-${toDateKey()}.json`, JSON.stringify(store.exportData(), null, 2), "application/json");
     toast("Backup downloaded.");
@@ -1123,6 +1148,7 @@ function initSettings() {
     clearTimeout(armed); armed = 0;
     clear.textContent = "Delete everything";
     store.clearAll();
+    try { window.taskpulseDrag?.clear?.(); } catch { /* ignore */ }
     renderAll();
     toast("All tasks deleted. Export a backup first next time!");
   });
@@ -1229,18 +1255,18 @@ function tick() {
   const today = toDateKey();
   let dayChanged = false;
 
-  if (today !== lastToday) {          
+  if (today !== lastToday) {
     if (state.viewDate === lastToday) state.viewDate = today;
     lastToday = today;
     dayChanged = true;
   }
-  
+
   if (dayChanged) {
     renderAll();
   } else {
     renderNowBar();
   }
-  
+
   checkReminders();
 }
 
@@ -1280,10 +1306,8 @@ function boot() {
   initReport();
   initKeyboard();
   initRouter();
-
   
   updateClock();
-  
   setInterval(updateClock, 1000);
 
   store.onChange((e) => {
@@ -1299,5 +1323,130 @@ function boot() {
   checkReminders();
 }
 
+function initPlayground() {
+  // 1. Create the UI Modal
+  const modal = document.createElement("div");
+  modal.className = "playground-modal";
+  modal.innerHTML = `
+    <div class="playground-content">
+      <div class="playground-header">
+        <h3>Immersive Playground</h3>
+        <button class="icon-btn" id="close-playground" aria-label="Close">✕</button>
+      </div>
+      <p style="font-size: 13px; color: #94a3b8; margin: 0 0 16px;">Set your vibe. This changes the 3D background and ambient audio.</p>
+      
+      <div class="playground-grid">
+        <button class="env-card" data-env="office" aria-pressed="false">
+          <span class="env-icon">🏢</span>
+          <div class="env-text">
+            <strong>Deep Office</strong>
+            <span>Cool blues + Keyboard chatter</span>
+          </div>
+        </button>
+        <button class="env-card" data-env="home" aria-pressed="false">
+          <span class="env-icon">🏡</span>
+          <div class="env-text">
+            <strong>Cozy At Home</strong>
+            <span>Warm amber + Rain outside</span>
+          </div>
+        </button>
+        <button class="env-card" data-env="remote" aria-pressed="false">
+          <span class="env-icon">☕</span>
+          <div class="env-text">
+            <strong>Remote Cafe</strong>
+            <span>Neon vibes + Café murmur</span>
+          </div>
+        </button>
+      </div>
+
+      <label class="sound-vol" style="margin-top: 24px; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 13px; color: #94a3b8;">Volume</span>
+        <input type="range" min="0" max="1" step="0.01" value="0.5" id="env-volume" style="flex: 1;" />
+      </label>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // 2. Create the floating button
+  const dock = document.createElement("div");
+  dock.className = "sound-dock";
+  dock.innerHTML = `
+    <button class="sound-toggle" type="button" title="Open Playground">
+      <span class="sound-glyph">✨</span>
+      <span class="sound-label">Vibe</span>
+    </button>
+  `;
+  document.body.appendChild(dock);
+
+  // 3. Logic to switch environments
+  function setEnvironment(envId) {
+    if (!envId) return;
+    
+    // Set visual data attribute (CSS handles the 3D transitions)
+    document.body.dataset.env = envId;
+    
+    // Trigger audio change
+    if (window.taskpulseSound) {
+      // We map the visual ID to the audio mix
+      const audioMixes = {
+        office: ["cafe"], // You can add "keyboard" if you download it!
+        home:   ["rain"],
+        remote: ["cafe", "rain"]
+      };
+      window.taskpulseSound.setMix(audioMixes[envId] || []);
+    }
+
+    // Update UI
+    modal.querySelectorAll(".env-card").forEach(btn => {
+      btn.setAttribute("aria-pressed", String(btn.dataset.env === envId));
+    });
+    
+    // Save preference
+    localStorage.setItem("taskpulse:env", envId);
+  }
+
+  // Event Listeners
+  dock.querySelector(".sound-toggle").addEventListener("click", () => modal.classList.add("open"));
+  document.getElementById("close-playground").addEventListener("click", () => modal.classList.remove("open"));
+  modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("open"); });
+  
+  modal.querySelectorAll(".env-card").forEach(btn => {
+    btn.addEventListener("click", () => setEnvironment(btn.dataset.env));
+  });
+
+  document.getElementById("env-volume").addEventListener("input", (e) => {
+    if (window.taskpulseSound) window.taskpulseSound.setVolume(+e.target.value);
+  });
+
+  // 4. Restore last used environment
+  const savedEnv = localStorage.getItem("taskpulse:env") || "office";
+  // Only apply after a user gesture so audio isn't blocked
+  const resume = () => {
+    setEnvironment(savedEnv);
+    document.removeEventListener("pointerdown", resume);
+  };
+  document.addEventListener("pointerdown", resume, { once: true });
+  
+  // Set visual immediately, wait for click for audio
+  document.body.dataset.env = savedEnv;
+  modal.querySelector(`.env-card[data-env="${savedEnv}"]`)?.setAttribute("aria-pressed", "true");
+}
+
+// ADD THIS LINE TO YOUR boot() FUNCTION:
+// initPlayground();
 boot();
-window.taskpulse = { store, state, settings, debug: { createHand, pinIn, unpinOut, noteEls, queueHand } };
+window.taskpulse = {
+  store, state, settings,
+  drag: window.taskpulseDrag,
+  sound: window.taskpulseSound,
+  debug: { createHand, pinIn, unpinOut, noteEls, queueHand },
+};
+
+// DEBUG — remove after testing
+setTimeout(() => {
+  console.log("[TaskPulse] drag API:", window.taskpulseDrag);
+  console.log("[TaskPulse] sound API:", window.taskpulseSound);
+  console.log("[TaskPulse] board el:", document.getElementById("board"));
+  console.log("[TaskPulse] board classes:", document.getElementById("board")?.className);
+  console.log("[TaskPulse] notes on board:", document.querySelectorAll("#board .note").length);
+}, 800);

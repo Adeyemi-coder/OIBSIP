@@ -1,8 +1,8 @@
 "use strict";
 
-const CACHE = "verdant-v9"; 
+const CACHE = "verdant-v38";
 const FILES = [
-  "./", "index.html", "style.css", "formulas.js", "script.js", "tools.js",
+  "./", "index.html", "style.css", "formulas.js", "script.js", "drug.js", "tools.js",
   "manifest.webmanifest", "android-chrome-192x192.png", "android-chrome-512x512.png"
 ];
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];

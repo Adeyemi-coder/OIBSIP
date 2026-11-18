@@ -45,7 +45,7 @@
     ["Percent change", "(new − old) ÷ old × 100"]
   ];
   window.VERDANT_FORMULAS = FORMULAS;
-  window.VERDANT_FORMULAS_VERSION = "1.1, reviewed 9 Nov 2026";   // change this whenever a formula changes
+
 
   /* ---------- 2. EXTRA CALCULATORS: one for every formula tools.js does not already cover, so every row gets an Open button.
      Same shape as the calculators in tools.js. The library name is the key that matches a row, so it must match the text above exactly. ---------- */

@@ -234,6 +234,8 @@ class TaskStore {
       completedAt: status === STATUS.COMPLETED ? (isIso(raw.completedAt) ? raw.completedAt : new Date().toISOString()) : null,
       carryCount: Number.isInteger(raw.carryCount) && raw.carryCount > 0 ? raw.carryCount : 0,
       originDate: parseDateKey(raw.originDate) ? raw.originDate : date,
+      posX: typeof raw.posX === "number" ? raw.posX : null,
+      posY: typeof raw.posY === "number" ? raw.posY : null,
     };
   }
 
@@ -308,7 +310,7 @@ class TaskStore {
     const task = this.getTask(id);
     if (!task) return null;
 
-    const allowed = ["title", "contextTag", "category", "date", "timeBlock", "isStat", "assignee", "notes", "checklist", "status"];
+    const allowed = ["title", "contextTag", "category", "date", "timeBlock", "isStat", "assignee", "notes", "checklist", "status", "posX", "posY"];
     const patch = {};
     for (const key of allowed) if (key in changes) patch[key] = changes[key];
 

@@ -31,9 +31,12 @@
 
   <link rel="stylesheet" href="style.css">
   
+  <!-- Order matters: data files first, because tools.js reads them the moment it runs -->
+  <script src="drug.js" defer></script>
   <script src="formulas.js" defer></script>
   <script src="script.js" defer></script>
   <script src="tools.js" defer></script>
+  <script src="fluids.js" defer></script>
 </head>
 
 <body>
@@ -47,7 +50,7 @@
   </div>
 
   <header class="site-header">
-    <p class="wordmark">VERDANT</p>
+    <p class="wordmark">Curarith</p>
     <div class="site-header__actions">
       
       <!-- Install App Button (Icon on mobile, Text on desktop) -->
@@ -117,7 +120,7 @@
           <div class="tabs" role="tablist" aria-label="Calculator mode">
             <button type="button" class="tab" role="tab" id="tab-basic"   data-tab="basic"   aria-selected="true"  aria-controls="panel-basic"   tabindex="0">Calc</button>
             <button type="button" class="tab" role="tab" id="tab-sci"     data-tab="sci"     aria-selected="false" aria-controls="panel-sci"     tabindex="-1">Sci</button>
-            <button type="button" class="tab" role="tab" id="tab-nursing" data-tab="nursing" aria-selected="false" aria-controls="panel-nursing" tabindex="-1">Nursing</button>
+            <button type="button" class="tab" role="tab" id="tab-nursing" data-tab="nursing" aria-selected="false" aria-controls="panel-nursing" tabindex="-1">Health</button>
             <button type="button" class="tab" role="tab" id="tab-convert" data-tab="convert" aria-selected="false" aria-controls="panel-convert" tabindex="-1">Convert</button>
           </div>
 

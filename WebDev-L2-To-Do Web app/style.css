@@ -641,3 +641,95 @@ body[data-motion="off"] *, body[data-motion="off"] *::before, body[data-motion="
     width: 100%;
   }
 }
+
+#board.is-freeform {
+  position: relative;      /* no display override, no !important */
+  min-height: 60vh;
+}
+
+#board .note.is-placed {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: var(--note-w, 230px);   /* absolute elements lose their grid width, so set one */
+  margin: 0 !important;
+  transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0) rotate(var(--tilt, 0deg)) !important;
+  z-index: 10;
+}
+#board .note {
+  touch-action: none;
+  will-change: transform;
+  user-select: none;
+}
+
+#board .note.is-dragging {
+  transition: none !important;
+  cursor: grabbing;
+  filter: drop-shadow(0 24px 30px rgba(0, 0, 0, 0.4));
+  transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0)
+             rotate(var(--tilt, 0deg)) scale(1.04) !important;
+  animation: none !important;
+  z-index: 9999 !important;
+}
+
+/* ── Immersive 3D Environment Playground ── */
+.env-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  transition: background 1.5s ease;
+}
+
+/* Base Orb style */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+  transition: all 1.5s ease, transform 20s infinite alternate ease-in-out;
+  will-change: transform;
+}
+
+/* 🏢 OFFICE (Cool, structured blues and teals) */
+body[data-env="office"] .env-layer { background: #0f172a; }
+body[data-env="office"] .orb-1 { width: 50vw; height: 50vw; background: #3b82f6; top: 10%; left: 20%; }
+body[data-env="office"] .orb-2 { width: 40vw; height: 40vw; background: #0ea5e9; bottom: 10%; right: 10%; animation-delay: -5s; }
+body[data-env="office"] .orb-3 { width: 30vw; height: 30vw; background: #6366f1; top: 40%; left: 40%; animation-delay: -10s; }
+
+/* 🏡 AT HOME (Warm, cozy oranges, pinks, and purples) */
+body[data-env="home"] .env-layer { background: #1a0b12; }
+body[data-env="home"] .orb-1 { width: 60vw; height: 60vw; background: #f43f5e; top: -10%; left: -10%; }
+body[data-env="home"] .orb-2 { width: 50vw; height: 50vw; background: #f59e0b; bottom: -10%; right: 10%; animation-delay: -7s; }
+body[data-env="home"] .orb-3 { width: 40vw; height: 40vw; background: #8b5cf6; top: 30%; left: 30%; animation-delay: -12s; }
+
+/* ☕ REMOTE (Cyberpunk/Neon coffee shop vibes) */
+body[data-env="remote"] .env-layer { background: #09090b; }
+body[data-env="remote"] .orb-1 { width: 55vw; height: 55vw; background: #d946ef; top: -20%; right: -10%; }
+body[data-env="remote"] .orb-2 { width: 45vw; height: 45vw; background: #06b6d4; bottom: -10%; left: -10%; animation-delay: -4s; }
+body[data-env="remote"] .orb-3 { width: 35vw; height: 35vw; background: #8b5cf6; top: 50%; left: 50%; animation-delay: -8s; }
+
+/* The Float Animation */
+@keyframes float3d {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(5vw, 10vh, 0) scale(1.1); }
+  100% { transform: translate3d(-5vw, -5vh, 0) scale(0.9); }
+}
+
+/* Make sure the board is transparent so we can see the 3D env */
+#board {
+  background: transparent !important;
+}
+
+/* Optional: Give notes a glassy look so they blend with the 3D bg */
+body[data-env] .note {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+/* Restore theme colors for specific note elements */
+body[data-env] .note .note-title { color: #f8fafc; }
+body[data-env] .note .note-context { color: #cbd5e1; }

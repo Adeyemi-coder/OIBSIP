@@ -15,7 +15,8 @@
   <link rel="stylesheet" href="upgrade.css">
   <link rel="stylesheet" href="extras.css">
   <link rel="stylesheet" href="pwa.css">
-  
+  <link rel="stylesheet" href="drag.css" />
+<link rel="stylesheet" href="sound.css" />
   <!-- PWA Meta -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
@@ -26,6 +27,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 </head>
 <body data-theme="canvas" data-motion="auto">
+  
   <a class="skip-link" href="#main">Skip to content</a>
 
   <!-- ================= Top bar ================= -->
@@ -286,5 +288,7 @@
   <script src="upgrade.js"></script>
   <script src="extras.js"></script>
   <script src="pwa.js"></script>
+  <script src="canvas-drag.js"></script>   <!-- after app.js -->
+<script src="focus-sound.js"></script>
 </body>
 </html>
