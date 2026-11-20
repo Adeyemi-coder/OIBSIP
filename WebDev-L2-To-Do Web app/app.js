@@ -68,7 +68,7 @@ const THEMES = [
   { id: "cork", label: "Cork board", bg: "#b98a58", dot: "#8b3a1a" },
 ];
 const SETTINGS_KEY = "taskpulse:settings:v1";
-const DEFAULT_SETTINGS = { theme: "canvas", motion: "auto", skin: "tone2", reminders: false, name: "", shift: "" };
+const DEFAULT_SETTINGS = { theme: "canvas", motion: "auto", skin: "tone2", reminders: false, name: "", shift: "", alertSounds: true, phone: false, phoneTopic: "", phoneTitles: false };
 
 function loadSettings() {
   let saved = {};
@@ -81,6 +81,10 @@ function loadSettings() {
   s.reminders = Boolean(s.reminders);
   s.name = String(s.name || "").slice(0, 40);
   s.shift = String(s.shift || "");
+  s.alertSounds = s.alertSounds !== false;
+  s.phone = Boolean(s.phone);
+  s.phoneTopic = /^[A-Za-z0-9_-]{8,64}$/.test(String(s.phoneTopic || "")) ? String(s.phoneTopic) : "";
+  s.phoneTitles = Boolean(s.phoneTitles);
   return s;
 }
 const settings = loadSettings();
@@ -451,6 +455,749 @@ function renderBoard() {
   document.dispatchEvent(new CustomEvent("taskpulse:rendered"));
 }
 
+/* ============================================================
+   WEEK VIEW - Plan Your Week
+   ============================================================ */
+let weekOffset = 0;
+let weekSelected = null;
+const justDone = new Set();
+
+const WEEK_CSS = `
+body{--wk-surface:#ffffff;--wk-surface-2:#faf5f8;--wk-text:#1e1b2e;--wk-muted:#6b7280;--wk-line:rgba(30,27,46,.10);--wk-accent:#be185d;--wk-on-accent:#fff;--wk-ok:#16a34a;--wk-late:#dc2626;--wk-shadow:0 1px 2px rgba(15,23,42,.05),0 14px 28px -18px rgba(15,23,42,.35)}
+body[data-theme="canvas"],body[data-theme="blueprint"],body[data-theme="midnight"]{--wk-surface:rgba(255,255,255,.07);--wk-surface-2:rgba(255,255,255,.05);--wk-text:#f1f5f9;--wk-muted:#9aa7bb;--wk-line:rgba(255,255,255,.13);--wk-on-accent:#0b1220;--wk-ok:#4ade80;--wk-late:#f87171;--wk-shadow:0 16px 32px -18px rgba(0,0,0,.7)}
+body[data-theme="canvas"]{--wk-accent:#60a5fa}
+body[data-theme="blueprint"]{--wk-accent:#7dd3fc}
+body[data-theme="midnight"]{--wk-accent:#a78bfa}
+body[data-theme="sand"]{--wk-accent:#b45309;--wk-surface-2:#fffbeb}
+body[data-theme="cork"]{--wk-accent:#8b3a1a;--wk-surface:rgba(255,250,240,.94);--wk-surface-2:#fff3df}
+
+#week-grid{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin:0 0 16px;overflow:visible}
+.wk-day{appearance:none;position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 6px 18px;border-radius:20px;border:1px solid var(--wk-line);background:var(--wk-surface);color:var(--wk-text);font:inherit;cursor:pointer;box-shadow:var(--wk-shadow);overflow:hidden;transition:transform .18s,background .18s,border-color .18s,box-shadow .18s}
+.wk-day:hover{transform:translateY(-2px)}
+.wk-day:focus-visible{outline:2px solid var(--wk-accent);outline-offset:2px}
+.wk-dn{font-size:.68rem;font-weight:800;letter-spacing:.14em;color:var(--wk-muted)}
+.wk-dd{font-size:1.6rem;font-weight:800;line-height:1;letter-spacing:-.02em}
+.wk-day.is-today .wk-dd{color:var(--wk-accent)}
+.wk-day.is-today::after{content:"";position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--wk-accent)}
+.wk-day.is-selected{background:var(--wk-accent);border-color:transparent;color:var(--wk-on-accent);transform:translateY(-3px)}
+.wk-day.is-selected .wk-dd,.wk-day.is-selected .wk-dn,.wk-day.is-selected .wk-dc{color:inherit}
+.wk-day.is-selected .wk-dn,.wk-day.is-selected .wk-dc{opacity:.85}
+.wk-day.is-selected::after{background:var(--wk-on-accent)}
+.wk-day.drag-over{outline:2px dashed var(--wk-accent);outline-offset:3px}
+.wk-dots{display:flex;gap:4px;min-height:10px;align-items:center;justify-content:center;flex-wrap:wrap;max-width:100%}
+.wk-dot{width:9px;height:9px;border-radius:50%;box-sizing:border-box;border:2px solid hsl(var(--hue,200) 70% 55%)}
+.wk-dot.done{background:hsl(var(--hue,200) 70% 55%)}
+.wk-day.is-selected .wk-dot{border-color:currentColor}
+.wk-day.is-selected .wk-dot.done{background:currentColor}
+.wk-more{font-size:.62rem;font-weight:800;opacity:.8}
+.wk-dc{font-size:.72rem;font-weight:700;color:var(--wk-muted)}
+.wk-dbar{position:absolute;left:0;bottom:0;height:4px;background:var(--wk-accent);border-radius:0 4px 0 0;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.wk-dbar.is-complete{background:var(--wk-ok)}
+.wk-day.is-selected .wk-dbar{background:var(--wk-on-accent);opacity:.8}
+@media(max-width:560px){.wk-day{padding:10px 2px 14px;border-radius:14px}.wk-dd{font-size:1.15rem}.wk-dn{letter-spacing:.06em;font-size:.6rem}.wk-dot{width:7px;height:7px}}
+
+.wk-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:18px 28px;margin:6px 0 18px;padding:18px 22px;border-radius:22px;background:var(--wk-surface);border:1px solid var(--wk-line);box-shadow:var(--wk-shadow);color:var(--wk-text);backdrop-filter:blur(10px)}
+.wk-range{display:flex;flex-direction:column;gap:2px;min-width:170px}
+.wk-range b{font-size:1.35rem;letter-spacing:-.02em}
+.wk-range span{font-size:.8rem;color:var(--wk-muted);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.wk-nav{display:flex;gap:6px;align-items:center}
+.wk-btn{appearance:none;border:1px solid var(--wk-line);background:var(--wk-surface-2);color:var(--wk-text);font:inherit;font-weight:700;font-size:.85rem;padding:9px 16px;border-radius:999px;cursor:pointer;transition:transform .15s,box-shadow .15s,background .15s,opacity .15s}
+.wk-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:var(--wk-shadow)}
+.wk-btn:disabled{opacity:.4;cursor:not-allowed}
+.wk-btn.icon{width:38px;height:38px;padding:0;display:grid;place-items:center;font-size:1.1rem}
+.wk-btn.primary{background:var(--wk-accent);border-color:transparent;color:var(--wk-on-accent)}
+.wk-btn.ghost{background:transparent}
+.wk-progress{display:flex;align-items:center;gap:14px;flex:1;min-width:230px}
+.wk-ring{position:relative;width:66px;height:66px;flex:none}
+.wk-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.wk-ring circle{fill:none;stroke-width:6;stroke-linecap:round}
+.wk-ring .bg{stroke:var(--wk-line)}
+.wk-ring .fg{stroke:var(--wk-accent);transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1),stroke .3s}
+.wk-ring.is-complete .fg{stroke:var(--wk-ok)}
+.wk-ring span{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:.95rem}
+.wk-stats{display:flex;flex-direction:column;gap:6px}
+.wk-stats strong{font-size:1.05rem}
+.wk-pills{display:flex;gap:6px;flex-wrap:wrap}
+.wk-pill{font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--wk-surface-2);border:1px solid var(--wk-line);color:var(--wk-muted)}
+.wk-pill.stat{color:var(--wk-late);border-color:var(--wk-late)}
+.wk-pill.ok{color:var(--wk-ok);border-color:var(--wk-ok)}
+
+.wk-backlog{margin:0 0 16px;padding:14px 16px;border-radius:18px;border:1.5px dashed var(--wk-line);background:var(--wk-surface-2);color:var(--wk-text)}
+.wk-backlog h3,.wk-backlog-title{margin:0 0 10px;font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:var(--wk-muted);font-weight:800}
+#week-backlog-list{display:flex;flex-wrap:wrap;gap:8px}
+#week-backlog-list .wk-card{width:240px}
+
+.wk-panel{padding:22px 24px;border-radius:26px;background:var(--wk-surface);border:1px solid var(--wk-line);box-shadow:var(--wk-shadow);color:var(--wk-text);margin-bottom:18px;transition:border-color .2s,background .2s}
+.wk-panel.drag-over{border-color:var(--wk-accent);background:color-mix(in srgb,var(--wk-accent) 10%,var(--wk-surface))}
+.wk-panel-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;margin-bottom:16px}
+.wk-panel-title{display:flex;flex-direction:column;gap:2px;flex:1;min-width:200px}
+.wk-panel-title b{font-size:1.55rem;letter-spacing:-.02em}
+.wk-panel-title span{font-size:.82rem;color:var(--wk-muted);font-weight:700}
+.wk-list{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+.wk-list .wk-card{padding:13px 12px 13px 18px}
+.wk-list .wk-title{font-size:1rem}
+.wk-hint{margin:8px 2px 0;font-size:.74rem;color:var(--wk-muted)}
+@media(max-width:560px){.wk-panel{padding:16px 14px;border-radius:20px}}
+
+.wk-card{position:relative;display:flex;gap:10px;align-items:flex-start;padding:10px 10px 10px 15px;border-radius:14px;background:var(--wk-surface-2);border:1px solid var(--wk-line);cursor:grab;overflow:hidden;transition:transform .15s,box-shadow .15s,opacity .2s}
+.wk-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:hsl(var(--hue,200) 70% 55%)}
+.wk-card.is-stat::before{background:var(--wk-late)}
+.wk-card:hover{transform:translateY(-1px);box-shadow:var(--wk-shadow)}
+.wk-card.dragging{opacity:.4;cursor:grabbing}
+.wk-card.is-done{opacity:.7}
+.wk-card.is-done .wk-title{text-decoration:line-through;color:var(--wk-muted)}
+.wk-check{flex:none;appearance:none;width:22px;height:22px;margin-top:1px;border-radius:50%;border:2px solid var(--wk-muted);background:transparent;color:#fff;display:grid;place-items:center;cursor:pointer;padding:0;transition:all .18s}
+.wk-check svg{width:12px;height:12px;opacity:0;transform:scale(.4);transition:all .18s}
+.wk-check:hover{border-color:var(--wk-ok);transform:scale(1.08)}
+.is-done .wk-check{background:var(--wk-ok);border-color:var(--wk-ok)}
+.is-done .wk-check svg{opacity:1;transform:none}
+.wk-card.just .wk-check{animation:wkpop .5s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes wkpop{0%{transform:scale(.6)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+.wk-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.wk-title{font-weight:700;font-size:.9rem;line-height:1.25;word-break:break-word}
+.wk-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.wk-tag{font-size:.66rem;font-weight:800;padding:2px 7px;border-radius:99px;background:color-mix(in srgb,hsl(var(--hue,200) 70% 55%) 18%,transparent);color:var(--wk-text);letter-spacing:.02em}
+.wk-tag.time{background:transparent;border:1px solid var(--wk-line);color:var(--wk-muted)}
+.wk-tag.stat{background:var(--wk-late);color:#fff}
+.wk-tag.late{background:transparent;border:1px solid var(--wk-late);color:var(--wk-late)}
+.wk-edit{flex:none;appearance:none;border:0;background:transparent;color:var(--wk-muted);width:24px;height:24px;border-radius:8px;padding:3px;cursor:pointer;opacity:.55;transition:opacity .15s}
+.wk-edit svg{width:100%;height:100%}
+.wk-card:hover .wk-edit,.wk-edit:focus-visible{opacity:1}
+.wk-edit:hover{color:var(--wk-text);background:var(--wk-line)}
+@media(hover:none){.wk-edit{opacity:.7}}
+.wk-empty{text-align:center;padding:30px 14px;border-radius:18px;border:1.5px dashed var(--wk-line);color:var(--wk-muted);font-size:.9rem;line-height:1.5}
+.wk-empty b{display:block;color:var(--wk-text);font-size:1rem;margin-bottom:2px}
+
+.wk-add{margin:0}
+.wk-add input{width:100%;box-sizing:border-box;padding:14px 16px;border-radius:16px;border:1.5px solid var(--wk-line);background:var(--wk-surface-2);color:var(--wk-text);font:inherit;font-size:.95rem;transition:border-color .15s,box-shadow .15s}
+.wk-add input::placeholder{color:var(--wk-muted)}
+.wk-add input:hover{border-color:var(--wk-muted)}
+.wk-add input:focus{outline:none;border-color:var(--wk-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--wk-accent) 25%,transparent)}
+
+.wk-summary{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:22px;padding:22px 24px;margin-bottom:18px;border-radius:26px;background:var(--wk-surface);border:1px solid var(--wk-line);box-shadow:var(--wk-shadow);color:var(--wk-text)}
+@media(max-width:900px){.wk-summary{grid-template-columns:1fr;padding:16px 14px}}
+.wk-sum-title{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.wk-sum-title b{font-size:1.35rem;letter-spacing:-.02em}
+.wk-sum-title span{font-size:.8rem;color:var(--wk-muted);font-weight:700}
+.wk-insight{margin:0 0 14px;font-size:.92rem;line-height:1.5;color:var(--wk-muted)}
+.wk-insight strong{color:var(--wk-text)}
+.wk-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.wk-kpi{padding:12px 14px;border-radius:16px;background:var(--wk-surface-2);border:1px solid var(--wk-line)}
+.wk-kpi b{display:block;font-size:1.6rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.wk-kpi span{font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--wk-muted)}
+.wk-kpi.ok b{color:var(--wk-ok)}
+.wk-rows{display:flex;flex-direction:column;margin-bottom:14px}
+.wk-row{display:flex;justify-content:space-between;gap:12px;padding:8px 2px;border-bottom:1px solid var(--wk-line);font-size:.88rem}
+.wk-row:last-child{border-bottom:0}
+.wk-row span{color:var(--wk-muted)}
+.wk-row b{text-align:right}
+.wk-sub{margin:4px 0 8px;font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--wk-muted)}
+.wk-cat{margin-bottom:9px}
+.wk-cat-top{display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;margin-bottom:4px}
+.wk-cat-top span{color:var(--wk-muted)}
+.wk-cat-bar{height:9px;border-radius:99px;background:var(--wk-line);overflow:hidden}
+.wk-cat-bar i{display:block;height:100%;border-radius:99px;background:hsl(var(--hue,200) 70% 55% / .32);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.wk-cat-bar i b{display:block;height:100%;border-radius:99px;background:hsl(var(--hue,200) 70% 55%)}
+
+.wk3d-stage{position:relative;height:500px;align-self:start;perspective:1100px;border-radius:22px;border:1px solid var(--wk-line);background:radial-gradient(120% 90% at 50% 8%,color-mix(in srgb,var(--wk-accent) 16%,transparent),transparent 62%),var(--wk-surface-2);cursor:grab;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.wk3d-stage.grabbing{cursor:grabbing}
+.wk3d-scene{position:absolute;left:50%;top:80%;width:0;height:0;transform-style:preserve-3d;will-change:transform}
+.wk3d-floor{position:absolute;transform:rotateX(90deg);border-radius:18px;background:color-mix(in srgb,var(--wk-text) 7%,transparent);border:1px solid var(--wk-line)}
+.wk3d-pad{position:absolute;transform:rotateX(90deg);border-radius:8px;background:color-mix(in srgb,var(--wk-text) 8%,transparent)}
+.wk3d-pad.is-today{background:color-mix(in srgb,var(--wk-accent) 38%,transparent);box-shadow:0 0 0 2px var(--wk-accent)}
+.wk3d-bar{position:absolute;transform-style:preserve-3d}
+.wk3d-bar.rise{transform-origin:50% 100%;animation:wkrise .85s cubic-bezier(.2,.9,.3,1.08) both;animation-delay:var(--d,0s)}
+@keyframes wkrise{from{transform:scaleY(.02)}to{transform:scaleY(1)}}
+.wk3d-cube{position:absolute;left:0;transform-style:preserve-3d}
+.wk3d-face{position:absolute;backface-visibility:hidden;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(0,0,0,.10)),var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.wk3d-cube.done{--c:var(--wk-ok)}
+.wk3d-cube.todo{--c:var(--wk-accent)}
+.wk3d-cube.free{--c:color-mix(in srgb,var(--wk-muted) 55%,transparent)}
+.wk3d-face.right{filter:brightness(.8)}
+.wk3d-face.left{filter:brightness(.66)}
+.wk3d-face.back{filter:brightness(.6)}
+.wk3d-face.top{filter:brightness(1.2)}
+.wk3d-label{position:absolute;width:64px;text-align:center;font-size:12px;font-weight:800;letter-spacing:.06em;line-height:1.15;color:var(--wk-muted);pointer-events:none}
+.wk3d-label small{display:block;font-size:11px;font-weight:700;opacity:.85}
+.wk3d-label.is-today{color:var(--wk-accent)}
+.wk3d-legend{position:absolute;left:14px;top:12px;display:flex;gap:10px;flex-wrap:wrap;font-size:.7rem;font-weight:800;color:var(--wk-muted);pointer-events:none}
+.wk3d-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.wk3d-hint{position:absolute;left:14px;bottom:10px;font-size:.68rem;font-weight:700;color:var(--wk-muted);opacity:.85;pointer-events:none}
+.wk3d-reset{position:absolute;right:12px;bottom:10px;padding:5px 11px;font-size:.7rem}
+body[data-motion="off"] .wk3d-bar{animation:none!important}
+@media(prefers-reduced-motion:reduce){body[data-motion="auto"] .wk3d-bar{animation:none!important}}
+
+body[data-motion="off"] [class^="wk-"],body[data-motion="off"] [class*=" wk-"]{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){body[data-motion="auto"] [class^="wk-"],body[data-motion="auto"] [class*=" wk-"]{animation:none!important;transition:none!important}}
+`;
+
+function injectWeekStyles() {
+  if (document.getElementById("week-styles")) return;
+  const style = el("style");
+  style.id = "week-styles";
+  style.textContent = WEEK_CSS;
+  document.head.append(style);
+}
+
+function weekBounds() {
+  const todayKey = toDateKey();
+  const today = parseDateKey(todayKey) ?? new Date();
+  const start = addDays(todayKey, -today.getDay() + weekOffset * 7);
+  return { todayKey, start, days: Array.from({ length: 7 }, (_, i) => addDays(start, i)) };
+}
+
+function weekRelativeLabel() {
+  if (weekOffset === 0) return "This week";
+  if (weekOffset === 1) return "Next week";
+  if (weekOffset === -1) return "Last week";
+  return weekOffset > 0 ? `${weekOffset} weeks ahead` : `${-weekOffset} weeks ago`;
+}
+
+function setDoneMany(tasks, done) {
+  const changed = [];
+  for (const t of tasks) {
+    if ((t.status === STATUS.COMPLETED) === done) continue;
+    try { if (store.toggleStatus(t.id)) changed.push(t.id); } catch { /* skip */ }
+  }
+  return changed;
+}
+
+function bulkToggle(tasks, label) {
+  const open = tasks.filter((t) => t.status !== STATUS.COMPLETED);
+  const makeDone = open.length > 0;
+  const changed = setDoneMany(makeDone ? open : tasks, makeDone);
+  if (makeDone) changed.forEach((id) => justDone.add(id));
+  renderAll();
+  if (!changed.length) return;
+  const n = changed.length;
+  toast(`${makeDone ? "Completed" : "Reopened"} ${n} task${n === 1 ? "" : "s"} · ${label}`, {
+    actionLabel: "Undo",
+    onAction: () => { changed.forEach((id) => { try { store.toggleStatus(id); } catch { /* skip */ } }); renderAll(); },
+  });
+}
+
+function toggleFromWeek(id) {
+  const task = store.toggleStatus(id);
+  if (!task) return;
+  if (task.status === STATUS.COMPLETED) justDone.add(id);
+  renderAll();
+}
+
+function weekCard(t, todayKey) {
+  const done = t.status === STATUS.COMPLETED;
+  const late = !done && t.date < todayKey;
+  const card = el("div", `wk-card${t.isStat ? " is-stat" : ""}${done ? " is-done" : ""}${justDone.has(t.id) ? " just" : ""}`);
+  card.draggable = true;
+  card.dataset.id = t.id;
+  card.style.setProperty("--hue", String(hashOf(t.category || "General") % 360));
+
+  const check = el("button", "wk-check");
+  check.type = "button";
+  check.innerHTML = ICONS.check;
+  check.setAttribute("aria-pressed", String(done));
+  check.setAttribute("aria-label", `${done ? "Reopen" : "Mark done"}: ${t.title}`);
+  check.addEventListener("click", (e) => { e.stopPropagation(); toggleFromWeek(t.id); });
+
+  const meta = el("div", "wk-meta");
+  if (t.isStat) meta.append(el("span", "wk-tag stat", "STAT"));
+  if (late) meta.append(el("span", "wk-tag late", "Late"));
+  if (t.timeBlock) meta.append(el("span", "wk-tag time", t.timeBlock.replace("-", " – ")));
+  meta.append(el("span", "wk-tag", t.category));
+  if (t.checklist?.length) meta.append(el("span", "wk-tag time", `${t.checklist.filter((i) => i.done).length}/${t.checklist.length}`));
+  if (t.contextTag) meta.append(el("span", "wk-tag time", t.contextTag));
+
+  const body = el("div", "wk-body");
+  body.append(el("div", "wk-title", t.title), meta);
+
+  const edit = el("button", "wk-edit");
+  edit.type = "button";
+  edit.innerHTML = ICONS.edit;
+  edit.setAttribute("aria-label", `Edit: ${t.title}`);
+  edit.addEventListener("click", (e) => { e.stopPropagation(); openEditor(t.id); });
+
+  card.append(check, body, edit);
+  card.addEventListener("click", () => openEditor(t.id));
+  card.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setData("text/plain", t.id);
+    e.dataTransfer.effectAllowed = "move";
+    card.classList.add("dragging");
+  });
+  card.addEventListener("dragend", () => card.classList.remove("dragging"));
+  return card;
+}
+
+function createWeekAddForm(dateKey, weekday) {
+  const form = el("form", "wk-add");
+  const input = el("input");
+  input.type = "text";
+  input.maxLength = LIMITS.title;
+  input.placeholder = `Add a task for ${weekday}…  press Enter`;
+  input.autocomplete = "off";
+  input.setAttribute("aria-label", `Add a task for ${dayLabel(dateKey, { long: true })}`);
+  form.append(input);
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const p = TaskStore.parseQuickAdd(input.value);
+    if (!p.title) return;
+    try {
+      store.addTask({
+        title: p.title, contextTag: p.contextTag, assignee: p.assignee, category: p.category || "General",
+        date: dateKey, timeBlock: p.timeBlock, isStat: p.isStat,
+      });
+    } catch (err) { toast(err.message, { tone: "alert" }); return; }
+    playAlert("add");
+    scanLate({ silent: true });
+    input.value = "";
+    renderAll(); // renderWeek restores focus to the new box
+  });
+  return form;
+}
+
+function attachWeekDrop(node, key) {
+  node.addEventListener("dragover", (e) => { e.preventDefault(); node.classList.add("drag-over"); });
+  node.addEventListener("dragleave", (e) => { if (!node.contains(e.relatedTarget)) node.classList.remove("drag-over"); });
+  node.addEventListener("drop", (e) => {
+    e.preventDefault();
+    node.classList.remove("drag-over");
+    const id = e.dataTransfer.getData("text/plain");
+    if (!id) return;
+    try { store.updateTask(id, { date: key ?? node.dataset.date }); } catch (err) { toast(err.message, { tone: "alert" }); }
+    renderAll();
+  });
+}
+
+function ensureWeekToolbar(grid, backlogBox) {
+  let bar = document.getElementById("wk-toolbar");
+  if (!bar) {
+    bar = el("div", "wk-toolbar");
+    bar.id = "wk-toolbar";
+    const anchor = backlogBox && backlogBox.parentElement ? backlogBox : grid;
+    anchor.parentElement.insertBefore(bar, anchor);
+  }
+  return bar;
+}
+
+function renderWeekToolbar(bar, { start, days, todayKey }, weekTasks) {
+  const total = weekTasks.length;
+  const done = weekTasks.filter((t) => t.status === STATUS.COMPLETED).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const complete = total > 0 && done === total;
+  const statOpen = weekTasks.filter((t) => t.isStat && t.status === STATUS.PENDING).length;
+  const late = weekTasks.filter((t) => t.status === STATUS.PENDING && t.date < todayKey).length;
+
+  const fmt = (key, opts) => (parseDateKey(key) ?? new Date()).toLocaleDateString(undefined, opts);
+  const range = el("div", "wk-range");
+  range.append(
+    el("span", "", weekRelativeLabel()),
+    el("b", "", `${fmt(start, { month: "short", day: "numeric" })} – ${fmt(days[6], { month: "short", day: "numeric" })}`),
+  );
+
+  const nav = el("div", "wk-nav");
+  const prev = el("button", "wk-btn icon", "‹"); prev.type = "button"; prev.setAttribute("aria-label", "Previous week");
+  const next = el("button", "wk-btn icon", "›"); next.type = "button"; next.setAttribute("aria-label", "Next week");
+  const now = el("button", "wk-btn ghost", "Today"); now.type = "button"; now.disabled = weekOffset === 0;
+  prev.addEventListener("click", () => { weekOffset -= 1; renderWeek(); });
+  next.addEventListener("click", () => { weekOffset += 1; renderWeek(); });
+  now.addEventListener("click", () => { weekOffset = 0; renderWeek(); });
+  nav.append(prev, now, next);
+
+  const C = 2 * Math.PI * 28;
+  const ring = el("div", `wk-ring${complete ? " is-complete" : ""}`);
+  ring.innerHTML = `<svg viewBox="0 0 66 66" aria-hidden="true"><circle class="bg" cx="33" cy="33" r="28"/><circle class="fg" cx="33" cy="33" r="28" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct / 100)).toFixed(1)}"/></svg><span>${pct}%</span>`;
+  ring.setAttribute("role", "img");
+  ring.setAttribute("aria-label", `${pct} percent of this week's tasks done`);
+
+  const stats = el("div", "wk-stats");
+  stats.append(el("strong", "", total ? (complete ? "Week complete — nice work" : `${done} of ${total} tasks done`) : "Nothing planned yet"));
+  const pills = el("div", "wk-pills");
+  if (statOpen) pills.append(el("span", "wk-pill stat", `${statOpen} STAT open`));
+  if (late) pills.append(el("span", "wk-pill stat", `${late} late`));
+  if (complete) pills.append(el("span", "wk-pill ok", "All clear"));
+  if (total && !statOpen && !late && !complete) pills.append(el("span", "wk-pill", `${total - done} to go`));
+  stats.append(pills);
+  const progress = el("div", "wk-progress");
+  progress.append(ring, stats);
+
+  const action = el("button", "wk-btn primary", complete ? "Reopen week" : "Complete week");
+  action.type = "button";
+  action.disabled = total === 0;
+  action.addEventListener("click", () => bulkToggle(weekTasks, "week"));
+
+  bar.replaceChildren(range, nav, progress, action);
+}
+
+/* ---------- Week summary + 3D chart ---------- */
+const wk3d = { rx: -24, ry: -24, drag: null, running: false, stage: null, scene: null, key: "", t0: performance.now() };
+const WK3D = { W: 30, D: 30, SP: 56, MAXH: 230 };
+
+function fmtMinutes(m) {
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  return h ? (r ? `${h}h ${r}m` : `${h}h`) : `${r}m`;
+}
+
+function cuboid(w, d, h, cls, { noTop = false } = {}) {
+  const box = el("div", `wk3d-cube ${cls}`);
+  box.style.width = `${w}px`;
+  box.style.height = `${h}px`;
+  const face = (name, fw, fh, tf, left, top) => {
+    const f = el("div", `wk3d-face ${name}`);
+    f.style.cssText = `width:${fw}px;height:${fh}px;left:${left}px;top:${top}px;transform:${tf}`;
+    return f;
+  };
+  box.append(
+    face("front", w, h, `translateZ(${d / 2}px)`, 0, 0),
+    face("back", w, h, `rotateY(180deg) translateZ(${d / 2}px)`, 0, 0),
+    face("right", d, h, `rotateY(90deg) translateZ(${w / 2}px)`, (w - d) / 2, 0),
+    face("left", d, h, `rotateY(-90deg) translateZ(${w / 2}px)`, (w - d) / 2, 0),
+  );
+  if (!noTop) box.append(face("top", w, d, `rotateX(90deg) translateZ(${h / 2}px)`, 0, (h - d) / 2));
+  return box;
+}
+
+function applyWk3d(now = performance.now()) {
+  if (!wk3d.scene || !wk3d.stage) return;
+  const width = wk3d.stage.clientWidth || 520;
+  const scale = Math.max(0.55, Math.min(1.3, width / 500));
+  const sway = motionOn() && !wk3d.drag ? Math.sin((now - wk3d.t0) / 1700) * 5 : 0;
+  wk3d.scene.style.transform = `scale(${scale.toFixed(3)}) rotateX(${wk3d.rx.toFixed(1)}deg) rotateY(${(wk3d.ry + sway).toFixed(1)}deg)`;
+}
+
+function wk3dLoop(now) {
+  if (!wk3d.stage || !wk3d.stage.isConnected || state.view !== "week") { wk3d.running = false; return; }
+  applyWk3d(now);
+  requestAnimationFrame(wk3dLoop);
+}
+
+function startWk3dLoop() {
+  if (wk3d.running || state.view !== "week") return;
+  wk3d.running = true;
+  requestAnimationFrame(wk3dLoop);
+}
+
+function resetWk3d() { wk3d.rx = -24; wk3d.ry = -24; applyWk3d(); }
+
+function ensureWeekSummary(anchor) {
+  let root = document.getElementById("wk-summary");
+  if (root) return root;
+  root = el("section", "wk-summary");
+  root.id = "wk-summary";
+
+  const stage = el("div", "wk3d-stage");
+  stage.setAttribute("role", "img");
+  stage.setAttribute("aria-label", "3D bar chart of tasks per day this week. Drag to rotate.");
+  const scene = el("div", "wk3d-scene");
+  const legend = el("div", "wk3d-legend");
+  legend.innerHTML = '<span><i style="background:var(--wk-ok)"></i>Done</span><span><i style="background:var(--wk-accent)"></i>To do</span>';
+  const hint = el("div", "wk3d-hint", "Drag to rotate");
+  const reset = el("button", "wk-btn ghost wk3d-reset", "Reset view");
+  reset.type = "button";
+  reset.addEventListener("pointerdown", (e) => e.stopPropagation());
+  reset.addEventListener("click", resetWk3d);
+  stage.append(scene, legend, hint, reset);
+
+  stage.addEventListener("pointerdown", (e) => {
+    if (e.button > 0) return;
+    wk3d.drag = { x: e.clientX, y: e.clientY, rx: wk3d.rx, ry: wk3d.ry };
+    stage.classList.add("grabbing");
+    try { stage.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+  });
+  stage.addEventListener("pointermove", (e) => {
+    const d = wk3d.drag;
+    if (!d) return;
+    wk3d.ry = Math.max(-80, Math.min(80, d.ry + (e.clientX - d.x) * 0.45));
+    wk3d.rx = Math.max(-62, Math.min(-6, d.rx + (e.clientY - d.y) * 0.3));
+    applyWk3d();
+  });
+  const end = () => { wk3d.drag = null; stage.classList.remove("grabbing"); };
+  stage.addEventListener("pointerup", end);
+  stage.addEventListener("pointercancel", end);
+  stage.addEventListener("dblclick", resetWk3d);
+
+  wk3d.stage = stage;
+  wk3d.scene = scene;
+  const side = el("div", "wk-sum-side");
+  root.append(stage, side);
+  anchor.parentElement.insertBefore(root, anchor.nextSibling);
+  return root;
+}
+
+function build3D(perDay, todayKey, rise) {
+  const { W, D, SP, MAXH } = WK3D;
+  const max = Math.max(1, ...perDay.map((d) => d.total));
+  const unit = Math.min(46, MAXH / max);
+  const nodes = [];
+
+  const floor = el("div", "wk3d-floor");
+  const fw = SP * 7 + 24;
+  const fd = D + 96;
+  floor.style.cssText = `width:${fw}px;height:${fd}px;left:${-fw / 2}px;top:${-fd / 2}px`;
+  nodes.push(floor);
+
+  perDay.forEach((day, i) => {
+    const x = (i - 3) * SP;
+    const isToday = day.key === todayKey;
+
+    const pad = el("div", `wk3d-pad${isToday ? " is-today" : ""}`);
+    pad.style.cssText = `width:${W + 12}px;height:${D + 12}px;left:${x - (W + 12) / 2}px;top:${-(D + 12) / 2}px;transform:rotateX(90deg) translateZ(0.5px)`;
+    nodes.push(pad);
+
+    const hd = day.done * unit;
+    const ht = day.todo * unit;
+    const H = day.total ? hd + ht : 3;
+    const bar = el("div", `wk3d-bar${rise ? " rise" : ""}`);
+    bar.style.cssText = `left:${x - W / 2}px;top:${-H}px;width:${W}px;height:${H}px;--d:${(i * 0.07).toFixed(2)}s`;
+    bar.title = day.total ? `${dayLabel(day.key, { long: true })}: ${day.done} done, ${day.todo} to do` : `${dayLabel(day.key, { long: true })}: free`;
+    if (!day.total) {
+      const slab = cuboid(W, D, 3, "free");
+      slab.style.bottom = "0";
+      bar.append(slab);
+    } else {
+      if (day.done) {
+        const c = cuboid(W, D, hd, "done", { noTop: day.todo > 0 });
+        c.style.bottom = "0";
+        bar.append(c);
+      }
+      if (day.todo) {
+        const c = cuboid(W, D, ht, "todo");
+        c.style.bottom = `${hd}px`;
+        bar.append(c);
+      }
+    }
+    nodes.push(bar);
+
+    const label = el("div", `wk3d-label${isToday ? " is-today" : ""}`);
+    label.style.cssText = `left:${x - 32}px;top:-14px;transform:translateZ(${D / 2 + 30}px) rotateX(90deg)`;
+    label.append(document.createTextNode(dayLabelShort(day.key)), el("small", "", day.total ? `${day.done}/${day.total}` : "–"));
+    nodes.push(label);
+  });
+  wk3d.scene.replaceChildren(...nodes);
+}
+
+function dayLabelShort(key) {
+  return (parseDateKey(key) ?? new Date()).toLocaleDateString(undefined, { weekday: "short" }).toUpperCase();
+}
+
+function renderWeekSummary(anchor, days, weekTasks, todayKey, startKey) {
+  const root = ensureWeekSummary(anchor);
+  const side = root.querySelector(".wk-sum-side");
+
+  const perDay = days.map((key) => {
+    const list = weekTasks.filter((t) => t.date === key);
+    const done = list.filter((t) => t.status === STATUS.COMPLETED).length;
+    return { key, total: list.length, done, todo: list.length - done };
+  });
+  const total = weekTasks.length;
+  const done = perDay.reduce((n, d) => n + d.done, 0);
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const statTasks = weekTasks.filter((t) => t.isStat);
+  const statOpen = statTasks.filter((t) => t.status === STATUS.PENDING).length;
+  const late = weekTasks.filter((t) => t.status === STATUS.PENDING && t.date < todayKey).length;
+  const carried = weekTasks.filter((t) => t.carryCount > 0).length;
+  let minutes = 0;
+  for (const t of weekTasks) {
+    const b = parseBlock(t.timeBlock);
+    if (b) minutes += Math.max(0, minutesOf(b.end) - minutesOf(b.start));
+  }
+  const busiest = perDay.reduce((best, d) => (d.total > (best?.total ?? 0) ? d : best), null);
+  const bestDone = perDay.reduce((best, d) => (d.done > (best?.done ?? 0) ? d : best), null);
+  const long = (key) => (parseDateKey(key) ?? new Date()).toLocaleDateString(undefined, { weekday: "long" });
+
+  const fmt = (key) => (parseDateKey(key) ?? new Date()).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const title = el("div", "wk-sum-title");
+  title.append(el("b", "", "Week summary"), el("span", "", `${weekRelativeLabel()} · ${fmt(days[0])} – ${fmt(days[6])}`));
+
+  const insight = el("p", "wk-insight");
+  if (!total) {
+    insight.textContent = "Nothing is planned for this week yet. Add tasks to a day and your summary will build itself.";
+  } else {
+    const parts = [`<strong>${done} of ${total}</strong> tasks done (${pct}%).`];
+    if (busiest) parts.push(`Busiest day is <strong>${long(busiest.key)}</strong> with ${busiest.total} task${busiest.total === 1 ? "" : "s"}.`);
+    if (statOpen) parts.push(`<strong>${statOpen} STAT</strong> still open.`);
+    else if (statTasks.length) parts.push("All STAT tasks are cleared.");
+    if (late) parts.push(`${late} overdue.`);
+    insight.innerHTML = parts.join(" ");
+  }
+
+  const kpis = el("div", "wk-kpis");
+  const kpi = (value, label, cls = "") => { const k = el("div", `wk-kpi ${cls}`); k.append(el("b", "", value), el("span", "", label)); return k; };
+  kpis.append(kpi(String(total), "Planned"), kpi(String(done), "Completed", "ok"), kpi(`${pct}%`, "Completion"), kpi(minutes ? fmtMinutes(minutes) : "–", "Time blocked"));
+
+  const rows = el("div", "wk-rows");
+  const row = (label, value) => { const r = el("div", "wk-row"); r.append(el("span", "", label), el("b", "", value)); return r; };
+  rows.append(
+    row("Busiest day", busiest ? `${long(busiest.key)} · ${busiest.total}` : "–"),
+    row("Most done", bestDone && bestDone.done ? `${long(bestDone.key)} · ${bestDone.done}` : "–"),
+    row("STAT tasks", statTasks.length ? `${statTasks.length - statOpen} of ${statTasks.length} cleared` : "None"),
+    row("Overdue", String(late)),
+    row("Carried over", String(carried)),
+  );
+
+  const cats = new Map();
+  for (const t of weekTasks) {
+    const c = cats.get(t.category) ?? { total: 0, done: 0 };
+    c.total += 1;
+    if (t.status === STATUS.COMPLETED) c.done += 1;
+    cats.set(t.category, c);
+  }
+  const catList = [...cats.entries()].sort((a, b) => b[1].total - a[1].total);
+  const catMax = Math.max(1, ...catList.map(([, c]) => c.total));
+  const catBox = el("div", "wk-cats");
+  if (catList.length) {
+    catBox.append(el("div", "wk-sub", "By category"));
+    catList.forEach(([name, c]) => {
+      const wrap = el("div", "wk-cat");
+      wrap.style.setProperty("--hue", String(hashOf(name || "General") % 360));
+      const top = el("div", "wk-cat-top");
+      top.append(el("div", "", name), el("span", "", `${c.done}/${c.total}`));
+      const bar = el("div", "wk-cat-bar");
+      const fill = el("i");
+      fill.style.width = `${Math.round((c.total / catMax) * 100)}%`;
+      const inner = el("b");
+      inner.style.width = `${Math.round((c.done / c.total) * 100)}%`;
+      fill.append(inner);
+      bar.append(fill);
+      wrap.append(top, bar);
+      catBox.append(wrap);
+    });
+  }
+  side.replaceChildren(title, insight, kpis, rows, catBox);
+
+  const visible = wk3d.stage.offsetParent !== null;
+  const key = `${startKey}`;
+  const rise = visible && wk3d.key !== key;
+  if (visible) wk3d.key = key;
+  build3D(perDay, todayKey, rise);
+  applyWk3d();
+  startWk3dLoop();
+}
+
+function renderWeek() {
+  const grid = $("week-grid");
+  const backlog = $("week-backlog-list");
+  if (!grid || !backlog) return;
+  injectWeekStyles();
+
+  // The old "Clear Unscheduled" button no longer applies: every task has a day.
+  $$('[data-view="week"] button').forEach((b) => { if (/clear unscheduled/i.test(b.textContent)) b.style.display = "none"; });
+
+  const backlogBox = backlog.parentElement;
+  const bounds = weekBounds();
+  const { todayKey, days } = bounds;
+  const tasks = store.getTasks();
+  const weekTasks = tasks.filter((t) => days.includes(t.date));
+  if (!weekSelected || !days.includes(weekSelected)) weekSelected = days.includes(todayKey) ? todayKey : days[0];
+
+  renderWeekToolbar(ensureWeekToolbar(grid, backlogBox), bounds, weekTasks);
+
+  // ---- Day strip -------------------------------------------------------
+  grid.replaceChildren();
+  days.forEach((key) => {
+    const d = parseDateKey(key) ?? new Date();
+    const dayTasks = sortTasks(tasks.filter((t) => t.date === key));
+    const doneN = dayTasks.filter((t) => t.status === STATUS.COMPLETED).length;
+    const allDone = dayTasks.length > 0 && doneN === dayTasks.length;
+
+    const tile = el("button", `wk-day${key === todayKey ? " is-today" : ""}${key === weekSelected ? " is-selected" : ""}`);
+    tile.type = "button";
+    tile.dataset.date = key;
+    tile.setAttribute("aria-pressed", String(key === weekSelected));
+    tile.setAttribute("aria-label", `${dayLabel(key, { long: true })}, ${dayTasks.length ? `${doneN} of ${dayTasks.length} done` : "no tasks"}`);
+
+    const dots = el("span", "wk-dots");
+    dayTasks.slice(0, 5).forEach((t) => {
+      const dot = el("i", `wk-dot${t.status === STATUS.COMPLETED ? " done" : ""}`);
+      dot.style.setProperty("--hue", String(hashOf(t.category || "General") % 360));
+      dots.append(dot);
+    });
+    if (dayTasks.length > 5) dots.append(el("span", "wk-more", `+${dayTasks.length - 5}`));
+
+    tile.append(
+      el("span", "wk-dn", d.toLocaleDateString(undefined, { weekday: "short" }).toUpperCase()),
+      el("span", "wk-dd", String(d.getDate())),
+      dots,
+      el("span", "wk-dc", dayTasks.length ? `${doneN}/${dayTasks.length}` : "Free"),
+    );
+    if (dayTasks.length) {
+      const bar = el("span", `wk-dbar${allDone ? " is-complete" : ""}`);
+      bar.style.width = `${Math.round((doneN / dayTasks.length) * 100)}%`;
+      tile.append(bar);
+    }
+    tile.addEventListener("click", () => { weekSelected = key; renderWeek(); });
+    attachWeekDrop(tile, key);
+    grid.append(tile);
+  });
+
+  // ---- Selected day panel ---------------------------------------------
+  let panel = document.getElementById("wk-panel");
+  if (!panel) {
+    panel = el("section", "wk-panel");
+    panel.id = "wk-panel";
+    grid.parentElement.insertBefore(panel, grid.nextSibling);
+  }
+  const prevInput = panel.querySelector(".wk-add input");
+  const hadFocus = Boolean(prevInput) && document.activeElement === prevInput;
+  const keptValue = prevInput ? prevInput.value : "";
+
+  const key = weekSelected;
+  const d = parseDateKey(key) ?? new Date();
+  const weekday = d.toLocaleDateString(undefined, { weekday: "long" });
+  const dayTasks = sortTasks(tasks.filter((t) => t.date === key));
+  const doneN = dayTasks.filter((t) => t.status === STATUS.COMPLETED).length;
+  const allDone = dayTasks.length > 0 && doneN === dayTasks.length;
+  const rel = key === todayKey ? " · Today" : key === addDays(todayKey, 1) ? " · Tomorrow" : key === addDays(todayKey, -1) ? " · Yesterday" : "";
+
+  const title = el("div", "wk-panel-title");
+  title.append(el("b", "", weekday), el("span", "", `${d.toLocaleDateString(undefined, { month: "long", day: "numeric" })}${rel}`));
+  const head = el("div", "wk-panel-head");
+  head.append(title);
+  if (dayTasks.length) head.append(el("span", `wk-pill${allDone ? " ok" : ""}`, allDone ? "All done" : `${doneN} of ${dayTasks.length} done`));
+  const complete = el("button", `wk-btn${allDone ? "" : " primary"}`, allDone ? "Reopen day" : "Complete day");
+  complete.type = "button";
+  complete.disabled = dayTasks.length === 0;
+  complete.addEventListener("click", () => bulkToggle(dayTasks, dayLabel(key)));
+  const openBoard = el("button", "wk-btn ghost", "Open on Board");
+  openBoard.type = "button";
+  openBoard.addEventListener("click", () => { goToDate(key); showView("board", { focus: true }); });
+  head.append(complete, openBoard);
+
+  const form = createWeekAddForm(key, weekday);
+  const hint = el("p", "wk-hint", "Tip:  ! STAT  ·  #category  ·  @09:00-10:00  ·  >name  ·  [context]");
+
+  const list = el("div", "wk-list");
+  if (dayTasks.length) {
+    dayTasks.forEach((t) => list.append(weekCard(t, todayKey)));
+  } else {
+    const empty = el("div", "wk-empty");
+    empty.append(el("b", "", key < todayKey ? "Nothing was planned" : "A free day"), document.createTextNode(key < todayKey ? "No tasks were set for this day." : "Add your first task above, or drag one here from another day."));
+    list.append(empty);
+  }
+  panel.replaceChildren(head, form, hint, list);
+  if (!panel.dataset.drop) { attachWeekDrop(panel, null); panel.dataset.drop = "1"; }
+  panel.dataset.date = key;
+  if (hadFocus) {
+    const input = panel.querySelector(".wk-add input");
+    input.value = keptValue;
+    input.focus();
+  }
+
+  renderWeekSummary(panel, days, weekTasks, todayKey, bounds.start);
+
+  // ---- Unfinished tasks from earlier days that aren't visible in this week
+  backlog.replaceChildren();
+  const leftovers = tasks.filter((t) => t.status === STATUS.PENDING && t.date < todayKey && !days.includes(t.date));
+  leftovers.forEach((t) => backlog.append(weekCard(t, todayKey)));
+  if (backlogBox) {
+    backlogBox.classList.add("wk-backlog");
+    const bt = [...backlogBox.children].find((c) => c !== backlog);
+    if (bt) bt.textContent = "Carried over — drag onto a day";
+    backlogBox.hidden = leftovers.length === 0;
+    backlogBox.style.display = leftovers.length === 0 ? "none" : "";
+  }
+
+  justDone.clear();
+}
+
 const chipDefs = [
   { key: "all", label: "All", test: () => true },
   { key: "stat", label: "STAT", cls: "stat", test: (t) => t.isStat },
@@ -556,10 +1303,12 @@ function renderAll() {
   renderCarry();
   renderNavBadge();
   renderReport();
+  renderWeek(); // Renders the week grid
   // ADDITIVE: let drag layer re-apply saved positions after a full render
   if (window.taskpulseDrag?.applyAll) {
     try { window.taskpulseDrag.applyAll(); } catch { /* ignore */ }
   }
+  queuePhoneSync();
 }
 
 function goToDate(key) {
@@ -570,11 +1319,38 @@ function goToDate(key) {
 /* ============================================================
    LIVE CLOCK
    ============================================================ */
+function ensureClockEl() {
+  let t = $("clock-text");
+  if (t) return t;
+  // Fallback: the page has no clock element, so draw a small clock pill.
+  if (!document.getElementById("clock-style")) {
+    const style = el("style");
+    style.id = "clock-style";
+    style.textContent = "#clock-widget{position:fixed;left:20px;bottom:20px;z-index:40;display:flex;align-items:baseline;gap:10px;padding:12px 20px;border-radius:999px;background:rgba(55,65,81,.92);color:#fff;font:700 17px/1 inherit;font-family:inherit;box-shadow:0 10px 24px -10px rgba(0,0,0,.5);backdrop-filter:blur(8px);pointer-events:none}#clock-widget #clock-date{font-size:12px;font-weight:600;opacity:.75;letter-spacing:.04em}@media(max-width:520px){#clock-widget{left:12px;bottom:12px;padding:10px 14px}}@media print{#clock-widget{display:none}}";
+    document.head.append(style);
+  }
+  const box = el("div");
+  box.id = "clock-widget";
+  box.setAttribute("aria-label", "Current time");
+  t = el("span");
+  t.id = "clock-text";
+  box.append(t, el("span"));
+  box.lastChild.id = "clock-date";
+  document.body.append(box);
+  return t;
+}
+
 function updateClock() {
-  const clockEl = $("clock-text");
-  if (!clockEl) return;
+  const clockEl = ensureClockEl();
   const now = new Date();
-  clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const dateEl = $("clock-date");
+  if (dateEl) dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
+
+function startClock() {
+  try { updateClock(); } catch (err) { console.error("TaskPulse: clock failed.", err); }
+  setInterval(() => { try { updateClock(); } catch { /* ignore */ } }, 1000);
 }
 
 /* ============================================================
@@ -814,6 +1590,8 @@ function presentWithHand(task) {
 function pinNewTask(fields, { jump = false } = {}) {
   let task;
   try { task = store.addTask(fields); } catch (err) { toast(err.message, { tone: "alert" }); return null; }
+  playAlert("add");
+  scanLate({ silent: true });
   if (jump) state.viewDate = task.date;
   if (task.date !== state.viewDate) {
     renderAll();
@@ -1052,6 +1830,7 @@ function initDialogs() {
       store.updateTask(editingId, v);
     } catch (err) { box.textContent = err.message; box.hidden = false; return; }
     noteDialog.close();
+    scanLate({ silent: true });
     if (v.date !== state.viewDate) toast(`Moved to ${dayLabel(v.date, { long: true })}`, { actionLabel: "Go there", onAction: () => goToDate(v.date) });
     renderAll();
   });
@@ -1201,7 +1980,7 @@ function initReport() {
   $("print-report").addEventListener("click", () => window.print());
 }
 
-const VIEW_NAMES = ["board", "new", "report"];
+const VIEW_NAMES = ["board", "week", "new", "report"];
 function currentHashView() {
   const name = location.hash.replace("#", "");
   return VIEW_NAMES.includes(name) ? name : "board";
@@ -1215,6 +1994,7 @@ function showView(name, { focus = false } = {}) {
   if (location.hash !== `#${name}`) history.replaceState(null, "", `#${name}`);
   if (name === "report") renderReport();
   if (name === "board") renderBoard();
+  if (name === "week") renderWeek();
   if (focus) {
     window.scrollTo(0, 0);
     if (name === "new") { newFields.field("date").value ||= state.viewDate; setTimeout(() => newFields.field("title").focus(), 80); }
@@ -1245,10 +2025,312 @@ function checkReminders() {
     try { sessionStorage.setItem("taskpulse:reminded", JSON.stringify([...reminded])); } catch { /* ignore */ }
     const text = `${away === 0 ? "Starting now" : `In ${away} min`}: ${t.title}${t.contextTag ? ` (${t.contextTag})` : ""}`;
     toast(text, { tone: t.isStat ? "alert" : undefined, timeout: 12000, actionLabel: "Open", onAction: () => { showView("board"); openEditor(t.id); } });
+    playAlert("remind");
     if ("Notification" in window && Notification.permission === "granted") {
       try { new Notification(t.isStat ? `STAT — ${t.title}` : t.title, { body: text }); } catch { /* ignore */ }
     }
   }
+}
+
+/* ============================================================
+   ALERTS: sounds, late detection, phone reminders (ntfy)
+   ============================================================ */
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try { audioCtx = new AC(); } catch { return null; }
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+
+function playTone(ctx, { freq, start = 0, dur = 0.18, type = "sine", gain = 0.14 }) {
+  const t0 = ctx.currentTime + start;
+  const osc = ctx.createOscillator();
+  const amp = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t0);
+  amp.gain.setValueAtTime(0.0001, t0);
+  amp.gain.exponentialRampToValueAtTime(gain, t0 + 0.02);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(amp).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + dur + 0.05);
+}
+
+const ALERT_SOUNDS = {
+  add: [{ freq: 660, dur: 0.14 }, { freq: 990, start: 0.09, dur: 0.24 }],
+  remind: [{ freq: 880, dur: 0.12 }, { freq: 1175, start: 0.14, dur: 0.12 }, { freq: 1568, start: 0.28, dur: 0.3 }],
+  late: [
+    { freq: 523, type: "square", gain: 0.07, dur: 0.16 }, { freq: 392, start: 0.2, type: "square", gain: 0.07, dur: 0.16 },
+    { freq: 523, start: 0.4, type: "square", gain: 0.07, dur: 0.16 }, { freq: 392, start: 0.6, type: "square", gain: 0.07, dur: 0.28 },
+  ],
+};
+
+function playAlert(kind) {
+  if (!settings.alertSounds) return;
+  const ctx = getAudio();
+  if (!ctx) return;
+  try { (ALERT_SOUNDS[kind] || []).forEach((n) => playTone(ctx, n)); } catch { /* ignore */ }
+}
+
+const overdueSeen = new Set();
+function scanLate({ silent = false } = {}) {
+  const now = new Date();
+  const fresh = [];
+  for (const t of store.getTasks()) {
+    let late = false;
+    if (t.status === STATUS.PENDING) { try { late = Boolean(store.isOverdue(t, now)); } catch { late = false; } }
+    if (!late) { overdueSeen.delete(t.id); continue; }
+    if (!overdueSeen.has(t.id)) { overdueSeen.add(t.id); if (!silent) fresh.push(t); }
+  }
+  if (fresh.length) alertLate(fresh);
+}
+
+function alertLate(list) {
+  const first = list[0];
+  const text = list.length === 1 ? `Running late: ${truncate(first.title, 50)}` : `${list.length} tasks are running late`;
+  toast(text, {
+    tone: "alert", timeout: 12000, actionLabel: "Open",
+    onAction: () => { goToDate(first.date); showView("board"); if (list.length === 1) openEditor(first.id); },
+  });
+  playAlert("late");
+  if (settings.reminders && "Notification" in window && Notification.permission === "granted") {
+    try { new Notification("TaskPulse: running late", { body: text }); } catch { /* ignore */ }
+  }
+  phoneLate(list);
+}
+
+/* ---- Phone reminders through ntfy.sh (free push service) ---- */
+const PHONE_SERVER = "https://ntfy.sh";
+const PHONE_KEY = "taskpulse:phone:v1";
+let phoneSched = {};
+try { phoneSched = JSON.parse(localStorage.getItem(PHONE_KEY) || "{}") || {}; } catch { phoneSched = {}; }
+function savePhoneSched() { try { localStorage.setItem(PHONE_KEY, JSON.stringify(phoneSched)); } catch { /* ignore */ } }
+const phoneReady = () => Boolean(settings.phone && settings.phoneTopic);
+
+function newPhoneTopic() {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return `taskpulse-${[...bytes].map((b) => chars[b % chars.length]).join("")}`;
+}
+
+let phoneErrAt = 0;
+function phoneError(err) {
+  console.warn("TaskPulse phone reminders:", err);
+  if (Date.now() - phoneErrAt > 600000) {
+    phoneErrAt = Date.now();
+    toast("Couldn't reach ntfy.sh, so phone reminders are paused for now.", { tone: "alert" });
+  }
+}
+
+async function ntfyPost({ title, message, priority = 3, tags = "", at = 0 }) {
+  const headers = { Title: title, Priority: String(priority) };
+  if (tags) headers.Tags = tags;
+  if (at) headers.Delay = String(Math.floor(at / 1000));
+  const res = await fetch(`${PHONE_SERVER}/${settings.phoneTopic}`, { method: "POST", headers, body: message });
+  if (!res.ok) throw new Error(`ntfy responded ${res.status}`);
+  const data = await res.json().catch(() => ({}));
+  return data.id || "";
+}
+
+async function ntfyCancel(rec) {
+  if (!rec || !rec.id) return;
+  try { await fetch(`${PHONE_SERVER}/${rec.topic}/${rec.id}`, { method: "DELETE" }); } catch { /* best effort */ }
+}
+
+function phoneText(t, kind, leadMin) {
+  const b = parseBlock(t.timeBlock);
+  if (settings.phoneTitles) {
+    return kind === "late" ? `Running late: ${t.title}` : `${t.title} starts at ${b ? b.start : "soon"}${leadMin ? ` (in ${leadMin} min)` : ""}`;
+  }
+  return kind === "late" ? "A task is running late. Open TaskPulse." : `A task starts at ${b ? b.start : "soon"}. Open TaskPulse for details.`;
+}
+
+function atTime(dateKey, hhmm) {
+  const d = parseDateKey(dateKey);
+  if (!d) return NaN;
+  const [h, m] = hhmm.split(":").map(Number);
+  d.setHours(h, m, 0, 0);
+  return d.getTime();
+}
+
+function wantedPhoneJobs() {
+  const jobs = new Map();
+  const now = Date.now();
+  const horizon = now + 71 * 3600 * 1000; // ntfy can hold a message for at most 3 days
+  for (const t of store.getTasks()) {
+    if (t.status !== STATUS.PENDING) continue;
+    const b = parseBlock(t.timeBlock);
+    if (!b) continue;
+    const startAt = atTime(t.date, b.start);
+    if (!Number.isFinite(startAt)) continue;
+    const lead = t.isStat ? 15 : 10;
+    const at = startAt - lead * 60000;
+    if (at <= now + 30000 || at >= horizon) continue;
+    jobs.set(t.id, {
+      at, title: t.isStat ? "TaskPulse - STAT starting soon" : "TaskPulse - starting soon",
+      message: phoneText(t, "start", lead), priority: t.isStat ? 5 : 3, tags: t.isStat ? "rotating_light" : "alarm_clock",
+    });
+  }
+  return jobs;
+}
+
+let phoneSyncing = false;
+let phoneSyncAgain = false;
+async function syncPhone() {
+  if (!phoneReady()) return;
+  if (phoneSyncing) { phoneSyncAgain = true; return; }
+  phoneSyncing = true;
+  try {
+    const wanted = wantedPhoneJobs();
+    const now = Date.now();
+    for (const [key, rec] of Object.entries(phoneSched)) {
+      if (rec.at <= now) { delete phoneSched[key]; continue; } // already delivered
+      const w = wanted.get(key);
+      if (!w || Math.abs(w.at - rec.at) > 1000 || w.message !== rec.msg || rec.topic !== settings.phoneTopic) {
+        await ntfyCancel(rec);
+        delete phoneSched[key];
+      }
+    }
+    for (const [key, w] of wanted) {
+      if (phoneSched[key]) continue;
+      const id = await ntfyPost(w);
+      phoneSched[key] = { id, at: w.at, msg: w.message, topic: settings.phoneTopic };
+    }
+    savePhoneSched();
+  } catch (err) {
+    phoneError(err);
+  } finally {
+    phoneSyncing = false;
+    if (phoneSyncAgain) { phoneSyncAgain = false; queuePhoneSync(); }
+  }
+}
+
+let phoneTimer = 0;
+function queuePhoneSync() {
+  if (!phoneReady()) return;
+  clearTimeout(phoneTimer);
+  phoneTimer = setTimeout(syncPhone, 1500);
+}
+
+function cancelAllPhone() {
+  const recs = Object.values(phoneSched);
+  phoneSched = {};
+  savePhoneSched();
+  recs.forEach((r) => ntfyCancel(r));
+}
+
+function phoneLate(list) {
+  if (!phoneReady()) return;
+  list.slice(0, 3).forEach((t) => {
+    ntfyPost({ title: "TaskPulse - running late", message: phoneText(t, "late"), priority: 4, tags: "warning" }).catch(phoneError);
+  });
+}
+
+function initAlerts() {
+  ["pointerdown", "keydown", "touchstart"].forEach((ev) => window.addEventListener(ev, () => getAudio(), { once: true, passive: true }));
+  scanLate({ silent: true }); // tasks that are already late at startup stay quiet
+  queuePhoneSync();
+}
+
+function initAlertSettings() {
+  const dialog = $("settings-dialog");
+  if (!dialog) return;
+  if (!document.getElementById("alert-settings-style")) {
+    const style = el("style");
+    style.id = "alert-settings-style";
+    style.textContent = ".alert-settings{display:flex;flex-direction:column;gap:10px;margin:14px 0;padding:14px 0 4px;border-top:1px solid rgba(128,128,128,.3)}.alert-settings h4{margin:0;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;opacity:.7}.alert-settings .as-note{margin:0;font-size:.8rem;line-height:1.45;opacity:.75}.alert-settings .as-panel{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:12px;background:rgba(128,128,128,.12)}.alert-settings .as-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.alert-settings code{padding:3px 8px;border-radius:8px;background:rgba(128,128,128,.2);font-size:.8rem;word-break:break-all}.alert-settings ol{margin:0;padding-left:1.2em;font-size:.85rem;line-height:1.55}";
+    document.head.append(style);
+  }
+  const host = el("div", "alert-settings");
+  host.append(el("h4", "", "Sounds & phone"));
+
+  const mkCheck = (id, text) => {
+    const label = el("label", "check");
+    const box = el("input");
+    box.type = "checkbox";
+    box.id = id;
+    label.append(box, el("span", "", text));
+    return { label, box };
+  };
+  const mkBtn = (text) => { const b = el("button", "btn btn-glass btn-sm", text); b.type = "button"; return b; };
+
+  const snd = mkCheck("set-alert-sounds", "Play a sound for new, reminder and late tasks");
+  snd.box.checked = settings.alertSounds;
+  const tryIt = mkBtn("Try it");
+  const sndRow = el("div", "as-row");
+  sndRow.append(snd.label, tryIt);
+
+  const phone = mkCheck("set-phone", "Send reminders to my phone");
+  phone.box.checked = settings.phone;
+  const panel = el("div", "as-panel");
+  const steps = el("ol");
+  ["Install the free ntfy app on your phone (Android or iPhone).", "In the app tap +, then subscribe to the topic below (leave the server as ntfy.sh).", "Press Send test. Your phone should buzz within seconds."].forEach((t) => steps.append(el("li", "", t)));
+  const topicRow = el("div", "as-row");
+  const topicCode = el("code");
+  const copyBtn = mkBtn("Copy");
+  const freshBtn = mkBtn("New topic");
+  topicRow.append(topicCode, copyBtn, freshBtn);
+  const titles = mkCheck("set-phone-titles", "Show task titles in phone alerts");
+  titles.box.checked = settings.phoneTitles;
+  const testRow = el("div", "as-row");
+  const testBtn = mkBtn("Send test");
+  const status = el("span", "as-note");
+  testRow.append(testBtn, status);
+  panel.append(
+    steps, topicRow, titles.label,
+    el("p", "as-note", "Keep titles off for private or patient details: with them off, your phone only shows the time. Anyone who knows your topic name can read its alerts, so keep it private. Reminders arrive 10 minutes before a time-blocked task (15 for STAT), even when this app is closed, for tasks in the next 3 days; open TaskPulse now and then so new tasks get scheduled."),
+    testRow,
+  );
+
+  host.append(sndRow, phone.label, panel);
+  const anchor = $("set-reminders");
+  const anchorBox = anchor ? (anchor.closest("label") || anchor.parentElement) : null;
+  if (anchorBox && anchorBox.parentElement) anchorBox.parentElement.insertBefore(host, anchorBox.nextSibling);
+  else (dialog.querySelector("form") || dialog).append(host);
+
+  const paint = () => { panel.hidden = !settings.phone; topicCode.textContent = settings.phoneTopic || "-"; };
+  paint();
+
+  snd.box.addEventListener("change", () => { settings.alertSounds = snd.box.checked; saveSettings(); if (snd.box.checked) playAlert("add"); });
+  tryIt.addEventListener("click", () => {
+    const was = settings.alertSounds;
+    settings.alertSounds = true;
+    playAlert("add");
+    setTimeout(() => { playAlert("late"); settings.alertSounds = was; }, 700);
+  });
+  phone.box.addEventListener("change", () => {
+    settings.phone = phone.box.checked;
+    if (settings.phone && !settings.phoneTopic) settings.phoneTopic = newPhoneTopic();
+    saveSettings();
+    paint();
+    if (settings.phone) syncPhone(); else cancelAllPhone();
+  });
+  freshBtn.addEventListener("click", () => {
+    cancelAllPhone();
+    settings.phoneTopic = newPhoneTopic();
+    saveSettings();
+    paint();
+    status.textContent = "New topic created. Subscribe to it in the ntfy app.";
+    syncPhone();
+  });
+  copyBtn.addEventListener("click", () => {
+    copyText(settings.phoneTopic).then(() => toast("Topic copied."), () => toast("Couldn't copy. Select the topic and copy it by hand.", { tone: "alert" }));
+  });
+  titles.box.addEventListener("change", () => { settings.phoneTitles = titles.box.checked; saveSettings(); syncPhone(); });
+  testBtn.addEventListener("click", async () => {
+    status.textContent = "Sending…";
+    try {
+      await ntfyPost({ title: "TaskPulse - test", message: "Phone reminders are working.", tags: "white_check_mark" });
+      status.textContent = "Sent. Check your phone.";
+    } catch (err) {
+      status.textContent = "Couldn't reach ntfy.sh. Check your connection.";
+      console.warn(err);
+    }
+  });
 }
 
 function tick() {
@@ -1267,6 +2349,7 @@ function tick() {
     renderNowBar();
   }
 
+  scanLate();
   checkReminders();
 }
 
@@ -1284,6 +2367,7 @@ function initKeyboard() {
       case "/": go("board"); $("quick-input").focus(); break;
       case "n": go("new"); break;
       case "b": go("board"); break;
+      case "w": go("week"); break;
       case "r": go("report"); break;
       case "t": if (state.view === "board") goToDate(toDateKey()); break;
       case "[": if (state.view === "board") goToDate(addDays(state.viewDate, -1)); break;
@@ -1297,6 +2381,7 @@ function initKeyboard() {
 function boot() {
   applyTheme();
   applyMotion();
+  startClock();
   buildFilterChips();
   initBoardEvents();
   initQuickAdd();
@@ -1307,8 +2392,9 @@ function boot() {
   initKeyboard();
   initRouter();
   
-  updateClock();
-  setInterval(updateClock, 1000);
+  try { if (typeof initPlayground === "function") initPlayground(); } catch (err) { console.error("TaskPulse: playground failed to start.", err); }
+  initAlertSettings();
+  initAlerts();
 
   store.onChange((e) => {
     if (e.type === "external") renderAll();
@@ -1323,117 +2409,6 @@ function boot() {
   checkReminders();
 }
 
-function initPlayground() {
-  // 1. Create the UI Modal
-  const modal = document.createElement("div");
-  modal.className = "playground-modal";
-  modal.innerHTML = `
-    <div class="playground-content">
-      <div class="playground-header">
-        <h3>Immersive Playground</h3>
-        <button class="icon-btn" id="close-playground" aria-label="Close">✕</button>
-      </div>
-      <p style="font-size: 13px; color: #94a3b8; margin: 0 0 16px;">Set your vibe. This changes the 3D background and ambient audio.</p>
-      
-      <div class="playground-grid">
-        <button class="env-card" data-env="office" aria-pressed="false">
-          <span class="env-icon">🏢</span>
-          <div class="env-text">
-            <strong>Deep Office</strong>
-            <span>Cool blues + Keyboard chatter</span>
-          </div>
-        </button>
-        <button class="env-card" data-env="home" aria-pressed="false">
-          <span class="env-icon">🏡</span>
-          <div class="env-text">
-            <strong>Cozy At Home</strong>
-            <span>Warm amber + Rain outside</span>
-          </div>
-        </button>
-        <button class="env-card" data-env="remote" aria-pressed="false">
-          <span class="env-icon">☕</span>
-          <div class="env-text">
-            <strong>Remote Cafe</strong>
-            <span>Neon vibes + Café murmur</span>
-          </div>
-        </button>
-      </div>
-
-      <label class="sound-vol" style="margin-top: 24px; display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 13px; color: #94a3b8;">Volume</span>
-        <input type="range" min="0" max="1" step="0.01" value="0.5" id="env-volume" style="flex: 1;" />
-      </label>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  // 2. Create the floating button
-  const dock = document.createElement("div");
-  dock.className = "sound-dock";
-  dock.innerHTML = `
-    <button class="sound-toggle" type="button" title="Open Playground">
-      <span class="sound-glyph">✨</span>
-      <span class="sound-label">Vibe</span>
-    </button>
-  `;
-  document.body.appendChild(dock);
-
-  // 3. Logic to switch environments
-  function setEnvironment(envId) {
-    if (!envId) return;
-    
-    // Set visual data attribute (CSS handles the 3D transitions)
-    document.body.dataset.env = envId;
-    
-    // Trigger audio change
-    if (window.taskpulseSound) {
-      // We map the visual ID to the audio mix
-      const audioMixes = {
-        office: ["cafe"], // You can add "keyboard" if you download it!
-        home:   ["rain"],
-        remote: ["cafe", "rain"]
-      };
-      window.taskpulseSound.setMix(audioMixes[envId] || []);
-    }
-
-    // Update UI
-    modal.querySelectorAll(".env-card").forEach(btn => {
-      btn.setAttribute("aria-pressed", String(btn.dataset.env === envId));
-    });
-    
-    // Save preference
-    localStorage.setItem("taskpulse:env", envId);
-  }
-
-  // Event Listeners
-  dock.querySelector(".sound-toggle").addEventListener("click", () => modal.classList.add("open"));
-  document.getElementById("close-playground").addEventListener("click", () => modal.classList.remove("open"));
-  modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("open"); });
-  
-  modal.querySelectorAll(".env-card").forEach(btn => {
-    btn.addEventListener("click", () => setEnvironment(btn.dataset.env));
-  });
-
-  document.getElementById("env-volume").addEventListener("input", (e) => {
-    if (window.taskpulseSound) window.taskpulseSound.setVolume(+e.target.value);
-  });
-
-  // 4. Restore last used environment
-  const savedEnv = localStorage.getItem("taskpulse:env") || "office";
-  // Only apply after a user gesture so audio isn't blocked
-  const resume = () => {
-    setEnvironment(savedEnv);
-    document.removeEventListener("pointerdown", resume);
-  };
-  document.addEventListener("pointerdown", resume, { once: true });
-  
-  // Set visual immediately, wait for click for audio
-  document.body.dataset.env = savedEnv;
-  modal.querySelector(`.env-card[data-env="${savedEnv}"]`)?.setAttribute("aria-pressed", "true");
-}
-
-// ADD THIS LINE TO YOUR boot() FUNCTION:
-// initPlayground();
 boot();
 window.taskpulse = {
   store, state, settings,
@@ -1441,12 +2416,3 @@ window.taskpulse = {
   sound: window.taskpulseSound,
   debug: { createHand, pinIn, unpinOut, noteEls, queueHand },
 };
-
-// DEBUG — remove after testing
-setTimeout(() => {
-  console.log("[TaskPulse] drag API:", window.taskpulseDrag);
-  console.log("[TaskPulse] sound API:", window.taskpulseSound);
-  console.log("[TaskPulse] board el:", document.getElementById("board"));
-  console.log("[TaskPulse] board classes:", document.getElementById("board")?.className);
-  console.log("[TaskPulse] notes on board:", document.querySelectorAll("#board .note").length);
-}, 800);

@@ -16,9 +16,15 @@
     return node;
   }
 
+  // FIX 1: proper thousands-separator handling so "1,000" != 1
   function parseNumber(raw, allowNegative) {
-    const text = String(raw).trim().replace(",", ".");
+    let text = String(raw).trim();
     if (text === "") return null;
+    if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(text)) {
+      text = text.replace(/,/g, "");                 // "1,000" or "1,000.50"
+    } else if (text.indexOf(",") >= 0 && text.indexOf(".") < 0) {
+      text = text.replace(",", ".");                  // "1,5" -> "1.5"
+    }
     const pattern = allowNegative ? /^-?([0-9]+\.?[0-9]*|\.[0-9]+)$/ : /^([0-9]+\.?[0-9]*|\.[0-9]+)$/;
     return pattern.test(text) ? Number(text) : NaN;
   }
@@ -57,7 +63,7 @@
     return list;
   }
 
-   function getLimits(unit) {
+  function getLimits(unit) {
     if (!unit) return [0, Infinity];
     const u = unit.toLowerCase();
     if (u === "kg") return [0.5, 500];
@@ -252,12 +258,33 @@
     return null;
   }
 
+  /* ---- vitals helpers ---- */
+  function vlist(v) {
+    if (!v) return [];
+    return Array.isArray(v) ? v : String(v).split(/[,\s]+/);
+  }
+  function needsRRVital(d) {
+    return vlist(d.requiresVitals).some(function (x) { return /^rr$/i.test(x) || /respiratory/i.test(x); });
+  }
+  function needsBPVital(d) {
+    const v = vlist(d.requiresVitals);
+    const c = vlist(d.contraindications);
+    const vit = v.some(function (x) {
+      return /^(bp|sbp|dbp|blood[_\s-]?pressure)$/i.test(x) || /^bloodpressure$/i.test(x);
+    });
+    const con = c.some(function (x) {
+      return /^high[_\s-]?bp$/i.test(x) || /hypertension/i.test(x) || /^htn$/i.test(x);
+    });
+    return vit || con;
+  }
+
   function parseDoseText(raw) {
     const out = { kind: "other", lo: null, hi: null, unit: "", maxSingle: null, maxDay: null, perDay: 0, count: 0 };
     let t = String(raw || "").replace(/(\d),(\d{3})/g, "$1$2").trim();
     if (!t || /^(n\/a|contraindicated|avoid|rarely used)/i.test(t)) { out.kind = "none"; return out; }
 
-    t = t.replace(/\(?\bmax(?:imum)?\.?\s*(\d+(?:\.\d+)?)\s*(mg|mcg|g|mL)?\s*(\/\s*day|daily|per day)?\s*\)?/gi, function (m, num, unit, perDay) {
+    // FIX 2: tolerate separators between "max" and the number
+    t = t.replace(/\(?\bmax(?:imum)?\b\.?[^\d]{0,30}?(\d+(?:\.\d+)?)\s*(mg|mcg|g|mL)?\s*(\/\s*day|daily|per day)?\s*\)?/gi, function (m, num, unit, perDay) {
       const cap = { v: Number(num), unit: canonUnit(unit) };
       if (perDay) out.maxDay = cap; else out.maxSingle = cap;
       return " ";
@@ -267,8 +294,10 @@
     else {
       const every = /every\s+(\d+)\s*(?:h|hours?|hrs?)\b/i.exec(t);
       const inDoses = /\bin\s+(\d+)\s+(?:divided\s+)?doses?\b/i.exec(t);
+      const qHours = /\bq\s*(\d+)\s*(?:h|hours?)\b/i.exec(t);   // FIX 5: q6h, q8h, q12h
       if (every) out.perDay = Math.round(24 / Number(every[1]));
       else if (inDoses) out.perDay = Number(inDoses[1]);
+      else if (qHours) out.perDay = Math.round(24 / Number(qHours[1]));
       else if (/\b(bid|twice)\b/i.test(t)) out.perDay = 2;
       else if (/\btid\b/i.test(t)) out.perDay = 3;
       else if (/\bqid\b/i.test(t)) out.perDay = 4;
@@ -316,16 +345,22 @@
   CALC_BY_ID[DRUGDOSE.id] = DRUGDOSE;
 
   function buildDrugCalc(ctx) {
-    const info = ctx.info, u = info.unit, d = ctx.drug;
+    const info = ctx.info;
+    const u = info.unit || "mg";
+    const d = ctx.drug;
     const one = info.count === 1 && info.lo !== null;
-    const pre = function (n) { return one && n !== null ? fmt(n, 4) : undefined; };
+    // FIX 3: do NOT prefill an ordered dose for unparseable orders — the parsed
+    // number there is often the container strength (e.g. "125 mg/5 mL"), not a dose.
+    const pre = function (n) {
+      if (info.kind === "other" || info.kind === "none") return undefined;
+      return one && n !== null ? fmt(n, 4) : undefined;
+    };
     const perDay = info.kind === "perKgDay";
     const fields = [];
 
-    // Standard Dose Fields
     if (info.kind === "fixed") {
       fields.push(numField("dose", "Ordered dose", u, info.lo !== null ? "e.g. " + fmt(info.lo, 4) : "", false, false, pre(info.lo)));
-    } else {
+    } else if (info.kind === "perKg" || info.kind === "perKgDay") {
       fields.push(numField("dpk", perDay ? "Dose per kg per day" : "Dose per kg", u + "/kg" + (perDay ? "/day" : ""), info.lo !== null ? "e.g. " + fmt(info.lo, 4) : "", false, false, pre(info.lo)));
       fields.push(numField("kg", "Weight", "kg", ctx.group === "adult" ? "e.g. 70" : "e.g. 20"));
       if (perDay) {
@@ -333,20 +368,26 @@
         const known = [1, 2, 3, 4, 6].indexOf(info.perDay) !== -1;
         fields.push(pickField("n", "Doses per day", opts, known ? String(info.perDay) : "0"));
       }
+    } else if (info.kind === "perMin") {
+      fields.push(numField("dose", "Ordered dose", u + "/kg/min", info.lo !== null ? "e.g. " + fmt(info.lo, 4) : "", false, false, pre(info.lo)));
+      fields.push(numField("kg", "Weight", "kg", ctx.group === "adult" ? "e.g. 70" : "e.g. 20"));
+      fields.push(numField("conc", "Concentration", u + "/mL", "e.g. 1600"));
+    } else {
+      // "other" / "none" - let the user type the prescribed dose
+      fields.push(numField("dose", "Ordered dose", u, "e.g. 500", false, false, undefined));
+      fields.push(numField("kg", "Weight", "kg", ctx.group === "adult" ? "e.g. 70" : "e.g. 20"));
     }
 
-    // Vitals & Contraindications
-    if (d.requiresVitals && d.requiresVitals.includes("rr")) {
+    if (needsRRVital(d)) {
       fields.push(numField("rr", "Respiratory rate (RR)", "breaths/min", "e.g. 16"));
     }
-    if (d.contraindications && d.contraindications.includes("high_bp")) {
+    if (needsBPVital(d)) {
       fields.push(numField("sbp", "Systolic BP", "mmHg", "e.g. 120"));
       fields.push(numField("dbp", "Diastolic BP", "mmHg", "e.g. 80"));
     }
 
-    if (u !== "mL") {
+    if (u !== "mL" && info.kind !== "perMin") {
       fields.push(pickField("form", "Form on hand", [["0", "Liquid or injection (mL)"], ["1", "Tablet or capsule"]], "0"));
-      // The unit label switches between "per mL" and "per tablet" when the form changes (see syncStrengthLabel).
       fields.push(numField("st", "Strength on hand", u + " per mL", "e.g. 50", false));
     }
     fields.push(numField("max", "Max single dose", u, "optional", true, false, info.maxSingle !== null ? fmt(info.maxSingle, 4) : undefined));
@@ -355,22 +396,25 @@
     DRUGDOSE.fields = fields;
     DRUGDOSE.name = "Drug dose: " + d.name + " (" + who + ")";
     DRUGDOSE.label = d.name + " (" + who + ")";
-    DRUGDOSE.formula = info.kind === "fixed" ? "ordered dose ÷ strength" : (perDay ? "(dose/kg/day × weight) ÷ doses per day, then ÷ strength" : "dose/kg × weight, then ÷ strength");
-    DRUGDOSE.note = "Check the prescriber's order and your facility's drug reference.";
+    DRUGDOSE.formula = info.kind === "fixed" ? "ordered dose ÷ strength"
+      : info.kind === "perMin" ? "dose × kg × 60 ÷ concentration"
+      : perDay ? "(dose/kg/day × weight) ÷ doses per day, then ÷ strength"
+      : "dose/kg × weight, then ÷ strength";
+    DRUGDOSE.note = (info.kind === "other" || info.kind === "none")
+      ? "The reference dose could not be parsed automatically. Enter the prescribed dose from the order."
+      : "Check the prescriber's order and your facility's drug reference.";
     
-    // Kept correct nr.select usage here to avoid breaking the app
     for (let i = 0; i < nr.select.options.length; i++) {
       if (nr.select.options[i].value === DRUGDOSE.id) nr.select.options[i].textContent = DRUGDOSE.name;
     }
   }
 
-  // Keeps the "Strength on hand" unit label in step with the "Form on hand" choice.
   function syncStrengthLabel() {
     const formSel = document.getElementById("nr-f-form");
     const stIn = document.getElementById("nr-f-st");
     if (!formSel || !stIn || !drugCtx || !drugCtx.info) return;
     const unitEl = stIn.parentNode.querySelector(".input-wrap__unit");
-    const base = drugCtx.info.unit;
+    const base = drugCtx.info.unit || "mg";
     const per = formSel.value === "1" ? " per tablet" : " per mL";
     if (unitEl) unitEl.textContent = base + per;
     stIn.setAttribute("aria-label", "Strength on hand, in " + base + per);
@@ -385,7 +429,7 @@
       const perMl = !!m[3];
       if (perMl === tablets) continue;
       let val = Number(m[1]);
-      if (perMl && m[4]) val = val / Number(m[4]);        // "125 mg/5 mL" is 25 mg per mL
+      if (perMl && m[4]) val = val / Number(m[4]);
       const from = canonUnit(m[2]);
       if (from !== unit) {
         const conv = massTo(val, from, unit);
@@ -400,11 +444,41 @@
   function computeDrugDose(v) {
     const c = drugCtx;
     if (!c || !c.info) return { error: "Open a drug from the Drug Reference first." };
-    const info = c.info, u = info.unit, kind = info.kind, name = c.drug.name;
+    const info = c.info;
+    const u = info.unit || "mg";
+    const kind = info.kind;
+    const name = c.drug.name;
     const doseLimits = [], bodyLimits = [], notes = [];
     let entered, perDose, daily = null, label, parts;
 
-    if (kind === "fixed") {
+    if (needsRRVital(c.drug) && v.rr !== null && v.rr !== undefined) {
+      if (v.rr < 12) {
+        bodyLimits.push("Respiratory rate of " + v.rr + " is dangerously low (bradypnea). Risk of respiratory depression with this drug.");
+      } else if (v.rr > 20) {
+        notes.push("Respiratory rate is elevated (" + v.rr + "). Check for underlying causes.");
+      }
+    }
+    if (needsBPVital(c.drug) && v.sbp !== null && v.sbp !== undefined && v.dbp !== null && v.dbp !== undefined) {
+      if (v.sbp > 140 || v.dbp > 90) {
+        doseLimits.push("Patient has elevated BP (" + v.sbp + "/" + v.dbp + "). This drug may exacerbate hypertension. Consult the prescriber.");
+      }
+    }
+
+    if (kind === "perMin") {
+      if (!v.conc || v.conc <= 0) return { error: "Enter the concentration (in " + u + "/mL)." };
+      entered = v.dose;
+      label = u + "/kg/min";
+      const rate = v.dose * v.kg * 60 / v.conc;
+      parts = [fmt(v.dose, 4), "×", fmt(v.kg, 4), "× 60 ÷", fmt(v.conc, 4)];
+      if (rate > 500) doseLimits.push("Very high rate. Check the concentration and units.");
+      const warnings = doseLimits.concat(bodyLimits, notes);
+      let limit = null;
+      if (doseLimits.length) limit = { title: "Dose Limit Warning", msg: doseLimits.concat(bodyLimits).join(" ") + " Check the order with the prescriber before you go on." };
+      else if (bodyLimits.length) limit = { title: "Physiological Limit Warning", msg: bodyLimits.join(" ") + " Please verify your entry." };
+      return { value: rate, dp: 1, unit: "mL/hr", parts: parts, detail: "", warnings: warnings, limit: limit };
+    }
+
+    if (kind === "fixed" || kind === "other" || kind === "none") {
       entered = v.dose; perDose = v.dose; label = u;
       parts = [fmt(v.dose, 4) + " " + u];
       if (info.maxDay !== null && info.perDay > 0) daily = v.dose * info.perDay;
@@ -419,27 +493,14 @@
       } else {
         perDose = total;
         parts = [fmt(v.dpk, 4), "×", fmt(v.kg, 4)];
+        // FIX 4: perKg with known dosing frequency — compute daily for maxDay check
+        if (info.perDay > 0) daily = total * info.perDay;
       }
       if (c.group === "adult" && v.kg < 30) bodyLimits.push("A weight of " + fmt(v.kg, 4) + " kg is unusually low for an adult.");
       if (c.group === "child" && v.kg > 80) bodyLimits.push("A weight of " + fmt(v.kg, 4) + " kg is unusually high for a child.");
     }
 
-    // Vitals & Contraindication Checks
-    if (c.drug.requiresVitals && c.drug.requiresVitals.includes("rr") && v.rr !== null) {
-      if (v.rr < 12) {
-        bodyLimits.push("Respiratory rate of " + v.rr + " is dangerously low (bradypnea). Risk of respiratory depression with this drug.");
-      } else if (v.rr > 20) {
-        notes.push("Respiratory rate is elevated (" + v.rr + "). Check for underlying causes.");
-      }
-    }
-
-    if (c.drug.contraindications && c.drug.contraindications.includes("high_bp") && v.sbp !== null && v.dbp !== null) {
-      if (v.sbp > 140 || v.dbp > 90) {
-        doseLimits.push("Patient has elevated BP (" + v.sbp + "/" + v.dbp + "). This drug may exacerbate hypertension. Consult the prescriber.");
-      }
-    }
-
-    if (info.count === 1 && info.lo !== null) {
+    if (info.count === 1 && info.lo !== null && kind !== "other" && kind !== "none") {
       const range = info.hi > info.lo ? fmt(info.lo, 4) + " to " + fmt(info.hi, 4) : fmt(info.lo, 4);
       if (entered > info.hi * 1.000001) doseLimits.push(fmt(entered, 4) + " " + label + " is above the reference dose for " + name + " (" + range + " " + label + ").");
       else if (entered < info.lo * 0.999999) notes.push(fmt(entered, 4) + " " + label + " is below the reference dose (" + range + " " + label + ").");
@@ -453,7 +514,6 @@
 
     let value = perDose, outUnit = u, detail = "";
     
-    // If the unit is not mL, they MUST provide the strength on hand to get the physical amount.
     if (u !== "mL") {
       if (v.st === null || v.st === undefined || v.st <= 0) {
         return { error: "Enter the strength on hand (e.g. " + u + " per mL or per tablet) to calculate the volume or tablets." };
@@ -461,7 +521,6 @@
       
       const tablets = v.form === 1;
 
-      // Safety check: the strength must match a product this drug actually comes as.
       const known = listedStrengths(c.drug.formulation, u, tablets);
       if (known.length && !known.some(function (k) { return Math.abs(k - v.st) <= k * 1e-6; })) {
         doseLimits.push("The strength you entered (" + fmt(v.st, 4) + " " + u + (tablets ? " per tablet" : " per mL") +
@@ -476,7 +535,7 @@
       
       if (tablets) {
         const exact = value;
-        const rounded = Math.round(exact * 2) / 2; // nearest half tablet
+        const rounded = Math.round(exact * 2) / 2;
         if (rounded === 0) {
           notes.push("The dose is less than half a tablet. A tablet is not suitable. Consider a liquid form.");
         } else if (Math.abs(exact - rounded) > 0.02) {
@@ -592,10 +651,14 @@
   let activeCalc = CALCS[0];
   let nursingOut = null;
   let drugCtx = null;
+  let warnTimer = null;
 
   nr.outOfBounds = false;
   nr.outOfBoundsMsg = "";
+  nr.outOfBoundsTitle = "";
   nr.userConfirmed = false; 
+  nr.snoozed = false;
+  nr.lastShownWarn = "";
 
   function renderFields() {
     const items = activeCalc.fields.map(function (f, i, all) {
@@ -643,6 +706,7 @@
     nr.outOfBounds = false;
     nr.outOfBoundsMsg = "";
     nr.outOfBoundsTitle = "";
+    const oobMessages = [];
 
     activeCalc.fields.forEach(function (f) {
       const node = document.getElementById("nr-f-" + f.k);
@@ -656,12 +720,16 @@
       const limits = getLimits(f.unit);
       if (n < limits[0] || n > limits[1]) {
         nr.outOfBounds = true;
-        nr.outOfBoundsTitle = "Physiological Limit Warning";
-        nr.outOfBoundsMsg = `The value for ${f.label} (${n} ${f.unit}) is outside normal physiological limits. Please verify your entry.`;
+        if (!nr.outOfBoundsTitle) nr.outOfBoundsTitle = "Physiological Limit Warning";
+        oobMessages.push("The value for " + f.label + " (" + n + " " + f.unit + ") is outside normal physiological limits.");
       }
 
       v[f.k] = n;
     });
+
+    if (oobMessages.length) {
+      nr.outOfBoundsMsg = oobMessages.join(" ") + " Please verify your entry.";
+    }
 
     nursingOut = null;
     if (problem) {
@@ -694,6 +762,9 @@
     
     nr.actions.save.disabled = !nursingOut;
     nr.actions.use.disabled = !nursingOut || !/^-?[0-9.]+$/.test(nursingOut.valueText);
+
+    // If the value is now valid, clear the dedup so a future bad entry warns again.
+    if (!nr.outOfBounds) nr.lastShownWarn = "";
   }
 
   function selectCalc(id, keepDrug) {
@@ -704,6 +775,8 @@
     nr.select.value = id;
     nr.formula.textContent = "Formula: " + calc.formula;
     nr.userConfirmed = false;
+    nr.snoozed = false;
+    nr.lastShownWarn = "";
     renderFields();
     if (!calc.hidden) remember(id);
     renderBanner();
@@ -738,25 +811,50 @@
       selectCalc(nr.select.value); 
     });
     
-    nr.form.addEventListener("input", function() {
+    // Debounced per-box warning: fire ~800ms after the user stops typing
+    // in the current field, but never re-show a warning they already dismissed.
+    nr.form.addEventListener("input", function () {
+      clearTimeout(warnTimer);
       nr.snoozed = false;
       nr.userConfirmed = false; 
       syncStrengthLabel();
       recomputeNursing();
+
+      if (!nr.outOfBounds || nr.userConfirmed) return;
+      if (nr.lastShownWarn === nr.outOfBoundsMsg) return;
+
+      warnTimer = setTimeout(function () {
+        if (!nr.outOfBounds || nr.userConfirmed || nr.snoozed) return;
+        if (nr.lastShownWarn === nr.outOfBoundsMsg) return;
+        nr.lastShownWarn = nr.outOfBoundsMsg;
+        showClinicalWarning(nr.outOfBoundsMsg, nr.outOfBoundsTitle);
+      }, 800);
     });
-    
+
+    // Cancel any pending modal if the user comes back to the form.
+    nr.form.addEventListener("focusin", function () {
+      clearTimeout(warnTimer);
+    });
+
+    // Leaving the form entirely is also "finished typing" — fire quickly
+    // (200 ms), but never re-show a warning the user already dismissed.
     nr.form.addEventListener("focusout", function (event) {
       if (!nr.form.contains(event.target)) return;
       const to = event.relatedTarget;
-      if (to && to.closest && (to.closest(".library") || to.closest(".drug-context"))) return;
-      recomputeNursing();
-      if (nr.outOfBounds && !nr.userConfirmed && !nr.snoozed) {
+      if (to && nr.form.contains(to)) return;   // still inside the form
+      clearTimeout(warnTimer);
+      warnTimer = setTimeout(function () {
+        recomputeNursing();
+        if (!nr.outOfBounds || nr.userConfirmed || nr.snoozed) return;
+        if (nr.lastShownWarn === nr.outOfBoundsMsg) return;
+        nr.lastShownWarn = nr.outOfBoundsMsg;
         showClinicalWarning(nr.outOfBoundsMsg, nr.outOfBoundsTitle);
-      }
+      }, 200);
     });
 
     nr.actions.save.addEventListener("click", function () {
       if (nr.outOfBounds && !nr.userConfirmed) {
+        nr.lastShownWarn = nr.outOfBoundsMsg;
         showClinicalWarning(nr.outOfBoundsMsg, nr.outOfBoundsTitle);
         return;
       }
@@ -765,6 +863,7 @@
 
     nr.actions.use.addEventListener("click", function () {
       if (nr.outOfBounds && !nr.userConfirmed) {
+        nr.lastShownWarn = nr.outOfBoundsMsg;
         showClinicalWarning(nr.outOfBoundsMsg, nr.outOfBoundsTitle);
         return;
       }
@@ -1006,12 +1105,13 @@
     limitModal.setAttribute("aria-hidden", "true");
   }
   function showClinicalWarning(message, title) {
-    if (limitModal.classList.contains("is-open")) return;
     limitTitle.textContent = title || "Physiological Limit Warning";
     limitText.textContent = message;
-    limitModal.classList.add("is-open");
-    limitModal.setAttribute("aria-hidden", "false");
-    limitCancel.focus();
+    if (!limitModal.classList.contains("is-open")) {
+      limitModal.classList.add("is-open");
+      limitModal.setAttribute("aria-hidden", "false");
+      limitCancel.focus();
+    }
   }
   function cancelLimit() {
     closeLimit();
@@ -1091,10 +1191,16 @@
     const generic = /blood product/i.test(drug.category || "");
     const info = generic ? parseDoseText("") : parseDoseText(text);
     if (generic) info.kind = "other";
+
+    const needsVitals = needsRRVital(drug) || needsBPVital(drug);
+
     const ctx = { drug: drug, group: group, text: text, info: info, calcId: "dose" };
 
-    if (info.kind === "perMin" && info.unit === "mcg") ctx.calcId = "titration";
-    else if (info.kind === "perKg" || info.kind === "perKgDay" || info.kind === "fixed") ctx.calcId = "drugdose";
+    if (info.kind === "perMin" && info.unit === "mcg" && !needsVitals) {
+      ctx.calcId = "titration";
+    } else if (info.kind === "perKg" || info.kind === "perKgDay" || info.kind === "fixed" || info.kind === "perMin" || info.kind === "other" || info.kind === "none" || needsVitals) {
+      ctx.calcId = "drugdose";
+    }
 
     drugCtx = ctx;
     if (ctx.calcId === "drugdose") buildDrugCalc(ctx);

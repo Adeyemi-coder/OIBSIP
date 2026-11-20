@@ -733,3 +733,102 @@ body[data-env] .note {
 /* Restore theme colors for specific note elements */
 body[data-env] .note .note-title { color: #f8fafc; }
 body[data-env] .note .note-context { color: #cbd5e1; }
+
+/* ============================================================
+   WEEK VIEW - Plan Your Week
+   ============================================================ */
+
+.week-backlog {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--input-bg);
+  border: 1px dashed var(--input-border);
+  border-radius: var(--r-md);
+}
+
+.week-backlog-list {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  min-height: 60px;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.week-day-col {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-md);
+  padding: 12px 8px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.week-day-col.is-today {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
+}
+
+.week-day-col.drag-over {
+  background: color-mix(in srgb, var(--accent) 15%, var(--card-bg));
+  border-color: var(--accent);
+}
+
+.week-day-header {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--input-border);
+  margin-bottom: 8px;
+}
+
+.week-day-col.is-today .week-day-header {
+  color: var(--accent);
+}
+
+/* Mini Task Cards for Week View */
+.week-task {
+  padding: 8px;
+  background: var(--canvas-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: grab;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.week-task:active {
+  cursor: grabbing;
+}
+
+.week-task.is-stat {
+  border-left: 3px solid var(--stat);
+}
+
+/* On Mobile: Stack the grid vertically */
+@media (max-width: 900px) {
+  .week-grid {
+    grid-template-columns: 1fr;
+  }
+  .week-day-col {
+    min-height: 150px;
+  }
+  .week-backlog-list {
+    flex-wrap: wrap;
+  }
+}
